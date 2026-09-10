@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   FileText
 } from 'lucide-react';
+import { formatFieldValue, formatCurrency } from '../utils/formatters';
 
 const FIELD_CONFIG = [
   { key: 'applicant_name', icon: User, labelTa: 'விண்ணப்பதாரர் பெயர்', labelHi: 'आवेदक का नाम', labelMr: 'अर्जदाराचे नाव', labelEn: 'Applicant Name' },
@@ -23,8 +24,6 @@ const FIELD_CONFIG = [
   { key: 'income_source', icon: Coins, labelTa: 'வருமான ஆதாரம்', labelHi: 'कमाई का साधन', labelMr: 'उत्पन्नाचे साधन', labelEn: 'Source of Income' },
   { key: 'aadhaar_last4', icon: ShieldCheck, labelTa: 'ஆதார் கடைசி 4 எண்கள்', labelHi: 'आधार अंतिम 4 अंक', labelMr: 'आधार शेवटचे 4 अंक', labelEn: 'Aadhaar Last 4 Digits', isAadhaar: true },
 ];
-
-import { formatFieldValue, formatCurrency } from '../utils/formatters';
 
 export default function ApplicationSummary({
   formData = {},

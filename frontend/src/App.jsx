@@ -18,6 +18,7 @@ import LandingAuthPage from './components/LandingAuthPage';
 import OverviewWorkspace from './components/OverviewWorkspace';
 import LanguageSelectModal from './components/LanguageSelectModal';
 import VoiceSessionStudio from './components/VoiceSessionStudio';
+import ApplicationSummary from './components/ApplicationSummary';
 import ApplicationsDashboard from './components/ApplicationsDashboard';
 import WhatsAppVoiceNoteModal from './components/WhatsAppVoiceNoteModal';
 import { useVoiceAudio } from './context/VoiceAudioContext';
@@ -48,6 +49,7 @@ const PAGES = {
   OVERVIEW: 'OVERVIEW',
   LANGUAGE_MODAL: 'LANGUAGE_MODAL',
   VOICE_SESSION: 'VOICE_SESSION',
+  SUMMARY: 'SUMMARY',
   APPLICATIONS: 'APPLICATIONS',
 };
 
@@ -373,15 +375,20 @@ export default function App() {
   };
 
   const handleConfirmField = (key) => {
-    setConfirmedFields(prev => Array.from(new Set([...prev, key])));
+    const nextConfirmed = Array.from(new Set([...confirmedFields, key]));
+    setConfirmedFields(nextConfirmed);
     setPendingConfirmField(curr => (curr === key ? null : curr));
     setCandidateQueue(null);
     setSpellingRetryMode(null);
 
-    const nextUnconfirmed = FIELD_ORDER.find(k => k !== key && (!formData[k] || !confirmedFields.includes(k)));
+    const nextUnconfirmed = FIELD_ORDER.find(k => k !== key && (!formData[k] || !nextConfirmed.includes(k)));
     if (nextUnconfirmed && !formData[nextUnconfirmed]) {
       const q = getFieldQuestion(nextUnconfirmed, language);
       speakText(q, language);
+    } else if (nextConfirmed.length >= 7) {
+      const ackMsg = language === 'ta-IN' ? 'உறுதிப்படுத்தப்பட்டது! விண்ணப்ப சுருக்கத்திற்கு செல்லப்படுகிறது.' : 'All details confirmed! Proceeding to application summary.';
+      speakText(ackMsg, language);
+      setTimeout(() => setCurrentPage(PAGES.SUMMARY), 1000);
     } else {
       const ackMsg = language === 'ta-IN' ? 'உறுதிப்படுத்தப்பட்டது!' : 'Confirmed!';
       speakText(ackMsg, language);
@@ -507,12 +514,13 @@ export default function App() {
 
         if (isPositiveConfirmation(spokenTranscript)) {
           // User said YES!
-          setConfirmedFields(prev => Array.from(new Set([...prev, activeKey])));
+          const nextConfirmed = Array.from(new Set([...confirmedFields, activeKey]));
+          setConfirmedFields(nextConfirmed);
           setPendingConfirmField(null);
           setCandidateQueue(null);
           setSpellingRetryMode(null);
 
-          const nextKey = FIELD_ORDER.find(k => k !== activeKey && (!formData[k] || !confirmedFields.includes(k)));
+          const nextKey = FIELD_ORDER.find(k => k !== activeKey && (!formData[k] || !nextConfirmed.includes(k)));
           const confirmText = language === 'ta-IN' ? 'நன்றி!'
             : language === 'hi-IN' ? 'धन्यवाद!'
             : language === 'te-IN' ? 'ధన్యవాదాలు!'
@@ -526,6 +534,7 @@ export default function App() {
               : language === 'hi-IN' ? 'बहुत धन्यवाद! सभी जानकारी दर्ज हो गई है।'
               : 'Thank you! All details are confirmed.';
             speakText(doneMsg, language);
+            setTimeout(() => setCurrentPage(PAGES.SUMMARY), 1000);
           }
           return;
         }
@@ -704,6 +713,27 @@ export default function App() {
   };
 
   const handleSubmitApplication = async () => {
+    // Validation check: require all 7 fields confirmed before allowing bank submission
+    const unconfirmed = FIELD_ORDER.filter(k => !formData[k] || !confirmedFields.includes(k));
+    if (unconfirmed.length > 0) {
+      const missingCount = unconfirmed.length;
+      const warnMsg = language === 'ta-IN'
+        ? `வங்கிக்கு விண்ணப்பிக்கும் முன் அனைத்து 7 விவரங்களையும் பூர்த்தி செய்ய வேண்டும். இன்னும் ${missingCount} விவரங்கள் உள்ளன.`
+        : language === 'hi-IN'
+        ? `बैंक में जमा करने से पहले सभी 7 विवरण पूरे और सत्यापित करें। (${missingCount} शेष)`
+        : language === 'te-IN'
+        ? `బ్యాంక్‌కు సమర్పించే ముందు ఇంకా ${missingCount} వివరాలను పూర్తి చేయండి.`
+        : `Please complete and confirm all 7 loan details before submitting to bank. (${missingCount} remaining)`;
+      speakText(warnMsg, language);
+      return;
+    }
+
+    // If triggered from VoiceSessionStudio and not yet on SUMMARY page, navigate to SUMMARY page first for user review!
+    if (currentPage !== PAGES.SUMMARY) {
+      setCurrentPage(PAGES.SUMMARY);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = {
@@ -779,6 +809,24 @@ export default function App() {
                 <Mic className="w-4 h-4" />
                 <span>Voice session</span>
               </button>
+
+              {confirmedFields.length > 0 && (
+                <button
+                  type="button"
+                  className={`nav-tab-pill ${currentPage === PAGES.SUMMARY ? 'active' : ''}`}
+                  onClick={() => {
+                    if (confirmedFields.length < 7) {
+                      const msg = language === 'ta-IN' ? 'அனைத்து 7 விவரங்களையும் பூர்த்தி செய்த பிறகே சுருக்கம் பார்க்க முடியும்.' : 'Please complete all 7 details first.';
+                      speakText(msg, language);
+                    } else {
+                      setCurrentPage(PAGES.SUMMARY);
+                    }
+                  }}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Summary</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -970,6 +1018,22 @@ export default function App() {
             onPlayTTS={(txt, lang) => speakText(txt, lang)}
             isSubmitting={isSubmitting}
             onFillDemoProfile={handleFillDemoProfile}
+          />
+        )}
+
+        {currentPage === PAGES.SUMMARY && (
+          <ApplicationSummary
+            formData={formData}
+            language={language}
+            onSubmit={handleSubmitApplication}
+            isSubmitting={isSubmitting}
+            onPlaySummary={(txt) => speakText(txt, language)}
+            onEditField={(key) => {
+              setPendingConfirmField(key);
+              setCurrentPage(PAGES.VOICE_SESSION);
+              speakText(getFieldQuestion(key, language), language);
+            }}
+            isSpeaking={isSpeaking}
           />
         )}
 

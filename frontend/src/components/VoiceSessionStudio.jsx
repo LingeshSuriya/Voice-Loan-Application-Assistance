@@ -820,7 +820,11 @@ export default function VoiceSessionStudio({
               <span>
                 {isSubmitting
                   ? (language === 'ta-IN' ? 'மதிப்பீடு செய்கிறது...' : language === 'hi-IN' ? 'मूल्यांकन हो रहा है...' : 'Evaluating Credit...')
-                  : t.submitToBank}
+                  : (allFilled
+                      ? (language === 'ta-IN' ? 'விண்ணப்பத்தை சரிபார்த்து சமர்ப்பிக்கவும்' : language === 'hi-IN' ? 'समीक्षा करें और जमा करें' : 'Review & Submit to Bank')
+                      : (language === 'ta-IN' ? `விண்ணப்பத்தை சரிபார்க்கவும் (${confirmedCount}/7)` : `Review & Submit (${confirmedCount}/7 Confirmed)`)
+                    )
+                }
               </span>
               {allFilled && !isSubmitting && <ChevronRight className="w-4 h-4 text-emerald-200" />}
             </button>
