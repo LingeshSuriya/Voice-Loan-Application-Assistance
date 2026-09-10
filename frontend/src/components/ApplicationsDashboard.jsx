@@ -54,9 +54,6 @@ export default function ApplicationsDashboard({
 
   const handleDownloadPDF = (app) => {
     setSelectedAppForWhatsApp(app);
-    setTimeout(() => {
-      window.print();
-    }, 400);
   };
 
   return (

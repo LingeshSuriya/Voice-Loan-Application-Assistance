@@ -1902,3 +1902,427 @@
     align-items: stretch;
   }
 }
+
+/* ==========================================================================
+   9. DUAL DOCUMENT GENERATION & UNDERWRITING MODAL
+   ========================================================================== */
+.doc-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.doc-tab-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.doc-tab-pill:hover {
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.doc-tab-pill.active {
+  background: #0f766e;
+  color: #ffffff;
+  border-color: #0f766e;
+}
+
+.btn-download-pdf-blue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1d4ed8;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-download-pdf-blue:hover {
+  background: #1e40af;
+}
+
+/* Document Paper Containers */
+.printable-document-pane {
+  padding: 24px;
+  background: #f8fafc;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.receipt-paper-box {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.receipt-header-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #0f766e;
+  margin-bottom: 20px;
+}
+
+.receipt-bank-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #0f766e;
+}
+
+.receipt-doc-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 2px;
+}
+
+.receipt-ref-code {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.receipt-date-text {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.receipt-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 8px;
+}
+
+.receipt-info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.receipt-label {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.receipt-value {
+  font-size: 13px;
+  color: #0f172a;
+  margin-top: 2px;
+}
+
+.receipt-highlight-banner {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.receipt-sm-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #047857;
+}
+
+.receipt-big-amount {
+  font-size: 20px;
+  font-weight: 800;
+  color: #065f46;
+  margin-top: 4px;
+}
+
+.receipt-big-emi {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e40af;
+  margin-top: 4px;
+}
+
+.receipt-med-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-top: 4px;
+}
+
+.receipt-note-box {
+  background: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #78350f;
+  margin-bottom: 24px;
+  border-radius: 0 8px 8px 0;
+  line-height: 1.5;
+}
+
+.receipt-footer-signatures {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 30px;
+  padding-top: 16px;
+}
+
+.receipt-sig-block {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.sig-line {
+  width: 140px;
+  height: 1px;
+  background: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.bank-seal-stamp {
+  border: 2px solid #0f766e;
+  color: #0f766e;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  display: inline-block;
+  letter-spacing: 0.05em;
+}
+
+/* Formal Bank Sanction Letter */
+.bank-letter-paper {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 36px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
+  color: #1e293b;
+  line-height: 1.6;
+}
+
+.bank-letterhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.bank-legal-name {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.bank-sub-dept {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.bank-sub-address {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.bank-divider {
+  margin: 16px 0 20px;
+  border: none;
+  border-top: 2px solid #0f172a;
+}
+
+.bank-recipient-box {
+  font-size: 12.5px;
+  margin-bottom: 16px;
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.4;
+}
+
+.bank-subject-line {
+  font-size: 13px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-left: 3px solid #0f766e;
+  margin-bottom: 16px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.bank-body-intro {
+  font-size: 13px;
+  margin-bottom: 16px;
+  text-align: justify;
+}
+
+.bank-terms-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+}
+
+.bank-terms-table td {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+}
+
+.bank-terms-table .term-name {
+  width: 38%;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.bank-terms-table .term-val {
+  color: #0f172a;
+}
+
+.bank-conditions-box {
+  font-size: 11.5px;
+  margin-bottom: 28px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.bank-letter-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 36px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.sig-space {
+  height: 40px;
+}
+
+.sig-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sig-subtitle {
+  font-size: 10.5px;
+  color: #64748b;
+}
+
+.digital-stamp {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #047857;
+  border: 1px dashed #059669;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+/* Underwriting Info Modal */
+.underwriting-info-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 92%;
+  padding: 20px 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  margin: auto;
+}
+
+.btn-modal-primary-teal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #0f766e;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-modal-primary-teal:hover {
+  background: #115e59;
+}
+
+/* ==========================================================================
+   10. PRINT MEDIA STYLES (Clean PDF/Paper Export)
+   ========================================================================== */
+@media print {
+  /* Hide all app chrome, buttons, headers and backdrop */
+  body * {
+    visibility: hidden !important;
+  }
+
+  .voiceloan-navbar,
+  .no-print,
+  .whatsapp-modal-backdrop,
+  .btn-play-voicenote,
+  .voicenote-waveform-wrap,
+  .whatsapp-mic-badge,
+  .whatsapp-close-icon {
+    display: none !important;
+  }
+
+  /* Make only the printable document visible */
+  .printable-document-pane,
+  .printable-document-pane * {
+    visibility: visible !important;
+  }
+
+  .printable-document-pane {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .receipt-paper-box,
+  .bank-letter-paper {
+    border: 1px solid #94a3b8 !important;
+    box-shadow: none !important;
+    padding: 24px !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+}

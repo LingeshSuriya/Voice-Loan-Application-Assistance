@@ -51,10 +51,13 @@ class SpeechService:
         Synthesize text to speech audio.
         Returns: (base64_audio_string, raw_bytes)
         """
-        if not text or not text.strip():
-            return None, None
-
-        clean_text = text.replace("₹", " ").replace("*", "").strip()
+        import re
+        curr_word = "ரூபாய் " if language_code == "ta-IN" else ("रुपये " if language_code in ["hi-IN", "mr-IN"] else "rupees ")
+        clean_text = text.replace("₹", curr_word).replace("*", "")
+        # Remove parenthetical English text e.g. (Mohamed Irfan) for pure regional speech
+        if language_code != "en-IN":
+            clean_text = re.sub(r'\([A-Za-z0-9\s.,-]+\)', '', clean_text)
+        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
 
         # Map language to active, valid bulbul:v3 speakers
         speaker_map = {

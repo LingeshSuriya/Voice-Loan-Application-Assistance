@@ -156,7 +156,7 @@ export default function App() {
   // Voice recording handlers for Voice Session Studio
   const handleStartSessionRecord = async () => {
     try {
-      await startRecording();
+      await startRecording(language);
     } catch (err) {
       console.warn('Voice start record error:', err);
     }
@@ -165,13 +165,14 @@ export default function App() {
   const handleStopSessionRecord = async () => {
     try {
       const audioBlob = await stopRecording();
+      const spokenTranscript = (audioBlob && audioBlob.transcript) || liveTranscript || '';
       if (audioBlob) {
         if (!isOnline) {
-          const offlineExtracted = extractFieldsOffline(liveTranscript || '', language);
+          const offlineExtracted = extractFieldsOffline(spokenTranscript, language);
           setFormData(prev => ({ ...prev, ...offlineExtracted }));
         } else {
           try {
-            const res = await processVoiceIntake(audioBlob, language);
+            const res = await processVoiceIntake(audioBlob, language, spokenTranscript);
             if (res && res.data) {
               setFormData(prev => ({
                 applicant_name: res.data.applicant_name || prev.applicant_name,
@@ -185,7 +186,7 @@ export default function App() {
             }
           } catch (err) {
             console.warn('Online intake fallback to offline regex:', err);
-            const offlineExtracted = extractFieldsOffline(liveTranscript || '', language);
+            const offlineExtracted = extractFieldsOffline(spokenTranscript, language);
             setFormData(prev => ({ ...prev, ...offlineExtracted }));
           }
         }
@@ -444,6 +445,8 @@ export default function App() {
             onSubmitApplication={handleSubmitApplication}
             onBack={() => setCurrentPage(PAGES.OVERVIEW)}
             isRecording={isRecording}
+            liveTranscript={liveTranscript}
+            audioData={audioData}
             onStartRecord={handleStartSessionRecord}
             onStopRecord={handleStopSessionRecord}
             isSpeaking={isSpeaking}

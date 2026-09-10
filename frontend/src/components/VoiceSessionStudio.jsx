@@ -116,6 +116,8 @@ export default function VoiceSessionStudio({
   onSubmitApplication,
   onBack,
   isRecording,
+  liveTranscript = '',
+  audioData = null,
   onStartRecord,
   onStopRecord,
   isSpeaking,
@@ -233,13 +235,25 @@ export default function VoiceSessionStudio({
 
             {/* Soundwave Bars Visualizer */}
             <div className="console-waveform-strip">
-              {[30, 60, 90, 45, 80, 100, 70, 40, 65, 85, 95, 55, 35, 75, 90, 45].map((val, idx) => (
-                <div
-                  key={idx}
-                  className={`console-bar ${isRecording ? 'animate-soundwave' : ''}`}
-                  style={{ height: `${isRecording ? val : 20}%` }}
-                />
-              ))}
+              {(audioData && audioData.length > 0
+                ? Array.from(audioData.slice(0, 16)).map((val, idx) => {
+                    const heightPct = isRecording ? Math.max(20, Math.round((val / 255) * 100)) : 20;
+                    return (
+                      <div
+                        key={idx}
+                        className={`console-bar ${isRecording ? 'animate-soundwave' : ''}`}
+                        style={{ height: `${heightPct}%` }}
+                      />
+                    );
+                  })
+                : [30, 60, 90, 45, 80, 100, 70, 40, 65, 85, 95, 55, 35, 75, 90, 45].map((val, idx) => (
+                    <div
+                      key={idx}
+                      className={`console-bar ${isRecording ? 'animate-soundwave' : ''}`}
+                      style={{ height: `${isRecording ? val : 20}%` }}
+                    />
+                  ))
+              )}
             </div>
 
             <div className="console-prompt-instruction">
@@ -267,10 +281,12 @@ export default function VoiceSessionStudio({
           <div className="console-transcript-card">
             <div className="flex justify-between items-center mb-1.5">
               <span className="text-xs font-bold text-slate-700">{t.liveText}</span>
-              <span className="text-[11px] font-semibold text-slate-400">{t.waitingVoice}</span>
+              <span className={`text-[11px] font-semibold ${isRecording ? 'text-emerald-600 animate-pulse' : 'text-slate-400'}`}>
+                {isRecording ? `${t.listening}...` : t.waitingVoice}
+              </span>
             </div>
-            <div className="text-xs text-slate-500 italic min-h-[36px]">
-              {t.placeholderAnswer}
+            <div className={`text-xs min-h-[36px] ${liveTranscript ? 'text-slate-900 font-medium' : 'text-slate-500 italic'}`}>
+              {liveTranscript || (isRecording ? `${t.listening}...` : t.placeholderAnswer)}
             </div>
           </div>
 
@@ -339,11 +355,15 @@ export default function VoiceSessionStudio({
                 const fieldLabel = t.fields[key] || key;
 
                 let displayVal = val;
-                if (val && (key.includes('amount') || key.includes('income'))) {
+                if (val && (key === 'loan_amount' || key === 'monthly_income')) {
                   displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
                 } else if (val && key.includes('last4')) {
                   displayVal = `•••• ${val}`;
                 }
+
+                const waitingPlaceholder = language === 'ta-IN'
+                  ? 'குரல் பதிவுக்காக காத்திருக்கிறது'
+                  : (language === 'hi-IN' ? 'आवाज़ की प्रतीक्षा...' : 'Waiting for voice response...');
 
                 return (
                   <div key={key} className={`checklist-row-item ${isFilled ? 'filled' : 'waiting'}`}>
@@ -360,7 +380,7 @@ export default function VoiceSessionStudio({
                       <div className="checklist-row-value">
                         {isFilled ? displayVal : (
                           <span className="text-slate-400 font-normal">
-                            குரல் பதிவுக்காக காத்திருக்கிறது
+                            {waitingPlaceholder}
                           </span>
                         )}
                       </div>

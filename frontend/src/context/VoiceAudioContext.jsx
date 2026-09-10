@@ -17,6 +17,9 @@ export function VoiceAudioProvider({ children }) {
   const recognitionRef = useRef(null);
   const liveTranscriptRef = useRef('');
 
+  const scriptProcessorRef = useRef(null);
+  const pcmChunksRef = useRef([]);
+
   // Cleanup speech and audio on unmount
   useEffect(() => {
     return () => {
@@ -34,15 +37,84 @@ export function VoiceAudioProvider({ children }) {
       }
     };
   }, []);
+
+  /**
+   * Helper to encode float32 audio chunks to standard 16kHz 16-bit Mono WAV
+   */
+  const encodeWAV = (chunks, inputSampleRate, targetSampleRate = 16000) => {
+    let totalLength = 0;
+    for (let i = 0; i < chunks.length; i++) {
+      totalLength += chunks[i].length;
+    }
+    const merged = new Float32Array(totalLength);
+    let offset = 0;
+    for (let i = 0; i < chunks.length; i++) {
+      merged.set(chunks[i], offset);
+      offset += chunks[i].length;
+    }
+
+    // Downsample to 16000Hz for high-accuracy Sarvam AI STT
+    let resampled;
+    if (inputSampleRate === targetSampleRate) {
+      resampled = merged;
+    } else {
+      const ratio = inputSampleRate / targetSampleRate;
+      const newLength = Math.round(merged.length / ratio);
+      resampled = new Float32Array(newLength);
+      for (let i = 0; i < newLength; i++) {
+        resampled[i] = merged[Math.min(Math.round(i * ratio), merged.length - 1)];
+      }
+    }
+
+    // Build standard 44-byte WAV header + 16-bit PCM samples
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const bytesPerSample = bitsPerSample / 8;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = targetSampleRate * blockAlign;
+    const dataByteCount = resampled.length * bytesPerSample;
+    const buffer = new ArrayBuffer(44 + dataByteCount);
+    const view = new DataView(buffer);
+
+    const writeString = (pos, str) => {
+      for (let i = 0; i < str.length; i++) {
+        view.setUint8(pos + i, str.charCodeAt(i));
+      }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + dataByteCount, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true); // Subchunk size
+    view.setUint16(20, 1, true); // PCM format
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, targetSampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataByteCount, true);
+
+    let pcmOffset = 44;
+    for (let i = 0; i < resampled.length; i++, pcmOffset += 2) {
+      const s = Math.max(-1, Math.min(1, resampled[i]));
+      view.setInt16(pcmOffset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+
+    return new Blob([view], { type: 'audio/wav' });
+  };
+
   /**
    * Start microphone recording, attach Web Audio analyser, and launch live speech recognition
    */
-  const startRecording = async (language = 'hi-IN') => {
+  const startRecording = async (language = 'ta-IN') => {
     try {
       // Cancel any ongoing speech
       stopSpeaking();
       setLiveTranscript('');
       liveTranscriptRef.current = '';
+      pcmChunksRef.current = [];
 
       // 1. Launch in-browser SpeechRecognition (Chrome, Edge, Android)
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -51,7 +123,7 @@ export function VoiceAudioProvider({ children }) {
           const rec = new SpeechRec();
           rec.continuous = true;
           rec.interimResults = true;
-          rec.lang = language || 'hi-IN';
+          rec.lang = language || 'ta-IN';
           
           rec.onresult = (event) => {
             let full = '';
@@ -76,7 +148,7 @@ export function VoiceAudioProvider({ children }) {
         }
       }
 
-      // 2. Stream audio through MediaRecorder & Web Audio Analyser
+      // 2. Stream audio through AudioContext, ScriptProcessor & Analyser
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -86,20 +158,28 @@ export function VoiceAudioProvider({ children }) {
       const source = audioCtx.createMediaStreamSource(stream);
       source.connect(analyser);
 
+      // Capture raw PCM for pristine 16kHz WAV generation
+      const scriptProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
+      scriptProcessor.onaudioprocess = (e) => {
+        const input = e.inputBuffer.getChannelData(0);
+        pcmChunksRef.current.push(new Float32Array(input));
+      };
+      source.connect(scriptProcessor);
+      scriptProcessor.connect(audioCtx.destination);
+
       audioContextRef.current = audioCtx;
       analyserRef.current = analyser;
+      scriptProcessorRef.current = scriptProcessor;
 
+      // MediaRecorder as backup
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
-
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
-
       mediaRecorder.start(100);
+
       setIsRecording(true);
 
       // Waveform polling loop
@@ -136,37 +216,50 @@ export function VoiceAudioProvider({ children }) {
 
       const capturedTranscript = liveTranscriptRef.current || '';
 
-      if (!isRecording) {
-        const emptyBlob = new Blob([], { type: 'audio/wav' });
-        emptyBlob.transcript = capturedTranscript;
-        resolve(emptyBlob);
-        return;
-      }
-
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
+
+      // Stop script processor
+      if (scriptProcessorRef.current) {
+        try { scriptProcessorRef.current.disconnect(); } catch (e) {}
+        scriptProcessorRef.current = null;
+      }
+
+      const audioCtx = audioContextRef.current;
+      const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
+      let wavBlob = null;
+
+      if (pcmChunksRef.current.length > 0) {
+        try {
+          wavBlob = encodeWAV(pcmChunksRef.current, sampleRate, 16000);
+        } catch (err) {
+          console.warn('WAV encode error:', err);
+        }
+      }
+
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+        audioContextRef.current = null;
       }
 
       const recorder = mediaRecorderRef.current;
       if (recorder && recorder.state !== 'inactive') {
         recorder.onstop = () => {
-          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          blob.transcript = capturedTranscript;
+          const finalBlob = wavBlob || new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          finalBlob.transcript = capturedTranscript;
           setIsRecording(false);
           setAudioData(null);
           recorder.stream.getTracks().forEach((track) => track.stop());
-          resolve(blob);
+          resolve(finalBlob);
         };
         recorder.stop();
       } else {
         setIsRecording(false);
         setAudioData(null);
-        const fallbackBlob = new Blob([], { type: 'audio/wav' });
-        fallbackBlob.transcript = capturedTranscript;
-        resolve(fallbackBlob);
+        const finalBlob = wavBlob || new Blob([], { type: 'audio/wav' });
+        finalBlob.transcript = capturedTranscript;
+        resolve(finalBlob);
       }
     });
   };
@@ -194,7 +287,7 @@ export function VoiceAudioProvider({ children }) {
 
     setIsSpeaking(true);
 
-    // If server provided Sarvam base64 audio, play directly
+    // 1. If caller already provided Sarvam base64 audio, play directly
     if (audioBase64) {
       try {
         const audioSrc = `data:audio/wav;base64,${audioBase64}`;
@@ -222,8 +315,38 @@ export function VoiceAudioProvider({ children }) {
       }
     }
 
-    // Fallback: Browser Web Speech API (Works natively on Chrome/Edge/Android)
-    fallbackBrowserSpeech(text, language);
+    // 2. Fetch live high-fidelity regional audio from backend Sarvam AI TTS (bulbul:v3)
+    fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language })
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`TTS server returned ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (data && data.audio_base64) {
+          const audioSrc = `data:audio/wav;base64,${data.audio_base64}`;
+          const audio = new Audio(audioSrc);
+          audioElementRef.current = audio;
+          audio.onended = () => setIsSpeaking(false);
+          audio.onerror = (e) => {
+            console.warn('Sarvam audio playback failed:', e);
+            fallbackBrowserSpeech(text, language);
+          };
+          audio.play().catch((err) => {
+            console.warn('Audio play error (user interaction required):', err);
+            fallbackBrowserSpeech(text, language);
+          });
+        } else {
+          fallbackBrowserSpeech(text, language);
+        }
+      })
+      .catch((err) => {
+        console.warn('Sarvam TTS API unavailable, using browser speech fallback:', err);
+        fallbackBrowserSpeech(text, language);
+      });
   };
 
   const fallbackBrowserSpeech = (text, language) => {
