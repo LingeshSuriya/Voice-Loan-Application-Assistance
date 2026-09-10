@@ -62,11 +62,11 @@ class SpeechService:
         # Map language to active, valid high-fidelity bulbul:v3 speakers
         speaker_map = {
             "ta-IN": "kavitha",
-            "hi-IN": "meera",
+            "hi-IN": "priya",
             "te-IN": "kavya",
             "ml-IN": "kavya",
             "mr-IN": "rupali",
-            "en-IN": "arvind",
+            "en-IN": "priya",
         }
         speaker = speaker_map.get(language_code, "kavitha")
 

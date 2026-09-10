@@ -39,5 +39,6 @@ class Application(Base):
     tenure_months = Column(Integer, default=12, nullable=False)
     whatsapp_voice_text = Column(Text, nullable=True)
     language = Column(String(16), default="hi-IN")
+    unverified_fields = Column(Text, nullable=True)
     transcript = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

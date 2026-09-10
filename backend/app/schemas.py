@@ -2,9 +2,13 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 
+class CandidateFieldData(BaseModel):
+    candidates: List[str] = Field(default_factory=list)
+    confidence_note: Optional[str] = None
+
 class LoanApplicationData(BaseModel):
-    applicant_name: Optional[str] = Field(None, description="Full name of applicant")
-    village_or_address: Optional[str] = Field(None, description="Village, town, or address")
+    applicant_name: Optional[Any] = Field(None, description="Full name of applicant (string or CandidateFieldData dict)")
+    village_or_address: Optional[Any] = Field(None, description="Village, town, or address (string or CandidateFieldData dict)")
     loan_amount: Optional[float] = Field(None, description="Requested loan amount in INR")
     loan_purpose: Optional[str] = Field(None, description="Purpose of loan, e.g. business, agriculture, medical")
     monthly_income: Optional[float] = Field(None, description="Monthly income in INR")
@@ -97,6 +101,7 @@ class ApplicationSubmitRequest(BaseModel):
     language: str = "hi-IN"
     transcript: Optional[str] = None
     user_phone: Optional[str] = None
+    unverified_fields: Optional[List[str]] = None
 
 class ApplicationSubmitResponse(BaseModel):
     id: int
@@ -117,6 +122,7 @@ class ApplicationSubmitResponse(BaseModel):
     audio_base64: Optional[str] = None
     disclaimer: str
     user_phone: Optional[str] = None
+    unverified_fields: Optional[List[str]] = None
     created_at: datetime
 
 class ApplicationRead(BaseModel):
@@ -140,6 +146,7 @@ class ApplicationRead(BaseModel):
     whatsapp_voice_text: Optional[str] = None
     language: str
     user_phone: Optional[str] = None
+    unverified_fields: Optional[List[str]] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

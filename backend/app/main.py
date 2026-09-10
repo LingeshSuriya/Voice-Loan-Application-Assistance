@@ -49,6 +49,7 @@ def migrate_sqlite_columns():
                 ("monthly_emi", "FLOAT"),
                 ("tenure_months", "INTEGER DEFAULT 12"),
                 ("whatsapp_voice_text", "TEXT"),
+                ("unverified_fields", "TEXT"),
             ]
             for col_name, col_def in new_cols:
                 if col_name not in existing_cols:
@@ -501,6 +502,7 @@ def submit_loan_application(
         tenure_months=credit_eval["tenure_months"],
         whatsapp_voice_text=credit_eval["whatsapp_voice_text"],
         language=lang,
+        unverified_fields=json.dumps(payload.unverified_fields) if payload.unverified_fields else None,
         transcript=payload.transcript,
         created_at=datetime.now(timezone.utc)
     )
@@ -537,6 +539,7 @@ def submit_loan_application(
         audio_base64=audio_b64,
         disclaimer=disclaimer_copy,
         user_phone=application.user_phone,
+        unverified_fields=payload.unverified_fields,
         created_at=application.created_at
     )
 

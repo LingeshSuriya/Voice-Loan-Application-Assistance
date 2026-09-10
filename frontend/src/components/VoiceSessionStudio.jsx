@@ -352,6 +352,8 @@ export default function VoiceSessionStudio({
   formData,
   confirmedFields = [],
   pendingConfirmField = null,
+  candidateQueue = null,
+  unverifiedFields = [],
   onUpdateField,
   onConfirmField,
   onRetryField,
@@ -536,8 +538,21 @@ export default function VoiceSessionStudio({
           {/* Active Prompt Box */}
           <div className={`console-prompt-card ${isSpeaking ? 'speaking-glow' : ''}`}>
             <Volume2 className={`w-5 h-5 shrink-0 mt-0.5 ${isSpeaking ? 'text-amber-500 animate-pulse' : 'text-emerald-600'}`} />
-            <div className="flex-1 text-sm font-semibold text-slate-800">
-              {activePrompt}
+            <div className="flex-1">
+              {candidateQueue && candidateQueue.field === pendingConfirmField && (
+                <div className="mb-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[11px] font-bold animate-fadeIn">
+                  <Sparkles className="w-3 h-3 text-amber-600" />
+                  <span>
+                    {language === 'ta-IN' ? `விருப்பம் ${candidateQueue.index + 1} / ${candidateQueue.candidates.length}`
+                      : language === 'hi-IN' ? `विकल्प ${candidateQueue.index + 1} / ${candidateQueue.candidates.length}`
+                      : language === 'te-IN' ? `ఎంపిక ${candidateQueue.index + 1} / ${candidateQueue.candidates.length}`
+                      : `Candidate ${candidateQueue.index + 1} of ${candidateQueue.candidates.length}`}
+                  </span>
+                </div>
+              )}
+              <div className="text-sm font-semibold text-slate-800">
+                {activePrompt}
+              </div>
             </div>
             <button
               type="button"
@@ -677,6 +692,11 @@ export default function VoiceSessionStudio({
                     <div className="checklist-row-content">
                       <div className={`checklist-row-label ${isPendingConfirm ? 'text-amber-700 font-bold' : (isCurrentField ? 'text-emerald-700 font-bold' : '')}`}>
                         {fieldLabel}
+                        {unverifiedFields.includes(key) && (
+                          <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold border border-amber-300">
+                            Unverified / Review
+                          </span>
+                        )}
                         {isPendingConfirm && <span className="ml-1 text-[10px] text-amber-600 font-bold animate-pulse">▲ CONFIRM (ஆமாம் / இல்லை)</span>}
                         {isCurrentField && <span className="ml-1 text-[10px] text-emerald-600 animate-pulse">▲ ASKING NOW</span>}
                       </div>

@@ -39,8 +39,11 @@ def test_extract_full_profile():
     res_data = response.json()
     extracted = res_data["data"]
     
-    assert extracted["applicant_name"] == "राम कुमार"
-    assert extracted["village_or_address"] == "भोजपुर"
+    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    vill_val = extracted["village_or_address"]["candidates"][0] if isinstance(extracted["village_or_address"], dict) else extracted["village_or_address"]
+    
+    assert name_val == "राम कुमार"
+    assert vill_val == "भोजपुर"
     assert extracted["loan_amount"] == 50000.0
     assert "दुकान" in extracted["loan_purpose"]
     assert extracted["monthly_income"] == 15000.0
@@ -57,8 +60,11 @@ def test_extract_partial_profile():
     assert response.status_code == 200
     extracted = response.json()["data"]
     
-    assert extracted["applicant_name"] == "मनोज यादव"
-    assert extracted["village_or_address"] == "सीतापुर"
+    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    vill_val = extracted["village_or_address"]["candidates"][0] if isinstance(extracted["village_or_address"], dict) else extracted["village_or_address"]
+
+    assert name_val == "मनोज यादव"
+    assert vill_val == "सीतापुर"
     assert extracted["loan_amount"] == 40000.0
     # Must be null/None when missing, not guessed!
     assert extracted["monthly_income"] is None
@@ -177,17 +183,19 @@ def test_extract_custom_user_name_vignesh():
     transcript = "मेरा नाम विग्नेश है, मैं पुणे से हूँ। मुझे 60,000 का लोन चाहिए।"
     response = client.post("/api/extract", json={"transcript": transcript, "language": "hi-IN"})
     assert response.status_code == 200
-    data = response.json()["data"]
-    assert data["applicant_name"] == "विग्नेश"
-    assert data["loan_amount"] == 60000.0
+    extracted = response.json()["data"]
+    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    assert name_val == "विग्नेश"
+    assert extracted["loan_amount"] == 60000.0
 
 def test_extract_custom_user_name_rajkumar():
     transcript = "मेरा नाम राजकुमार है, मैं वाराणसी से हूँ। मुझे 75,000 का लोन चाहिए।"
     response = client.post("/api/extract", json={"transcript": transcript, "language": "hi-IN"})
     assert response.status_code == 200
-    data = response.json()["data"]
-    assert data["applicant_name"] == "राजकुमार"
-    assert data["loan_amount"] == 75000.0
+    extracted = response.json()["data"]
+    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    assert name_val == "राजकुमार"
+    assert extracted["loan_amount"] == 75000.0
 
 def test_auth_register_and_duplicate():
     import random
@@ -234,8 +242,10 @@ def test_tamil_extraction():
     res = client.post("/api/extract", json={"transcript": transcript, "language": "ta-IN"})
     assert res.status_code == 200
     extracted = res.json()["data"]
-    assert extracted["applicant_name"] == "விக்னேஷ்"
-    assert extracted["village_or_address"] == "மதுரை"
+    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    vill_val = extracted["village_or_address"]["candidates"][0] if isinstance(extracted["village_or_address"], dict) else extracted["village_or_address"]
+    assert name_val == "விக்னேஷ்"
+    assert vill_val == "மதுரை"
     assert extracted["loan_amount"] == 60000.0
     assert "மளிகை" in extracted["loan_purpose"]
     assert extracted["monthly_income"] == 18000.0

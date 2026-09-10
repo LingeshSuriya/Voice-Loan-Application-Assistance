@@ -39,6 +39,77 @@ CRITICAL RULES:
 4. For field_explanations, provide a single friendly sentence in Hindi explaining which exact words in the transcript led to extracting that field (e.g. "मैंने '50,000' को लोन राशि समझा"). If null, say "इस जानकारी का उल्लेख नहीं मिला".
 """
 
+def generate_phonetic_candidates(val: str, field_name: str, lang: str) -> Optional[Dict[str, Any]]:
+    if not val or not isinstance(val, str):
+        return None
+    val = val.strip()
+    if not val:
+        return None
+
+    candidates = [val]
+
+    if lang == "ta-IN":
+        if "சபரி" in val:
+            candidates.append(val.replace("சபரி", "சாபரி"))
+        elif "சாபரி" in val:
+            candidates.append(val.replace("சாபரி", "சபரி"))
+        elif "விக்னேஷ்" in val:
+            candidates.append(val.replace("விக்னேஷ்", "விக்னேஸ்"))
+        elif "கடையநல்லூர்" in val:
+            candidates.append(val.replace("கடையநல்லூர்", "காடையநல்லூர்"))
+        elif "பாளையங்கோட்டை" in val:
+            candidates.append(val.replace("பாளையங்கோட்டை", "பாளையங்கோட்ட"))
+        else:
+            if val.startswith("ச"):
+                candidates.append("சா" + val[1:])
+            elif val.startswith("சா"):
+                candidates.append("ச" + val[2:])
+
+    elif lang == "hi-IN":
+        if "सबरी" in val:
+            candidates.append(val.replace("सबरी", "सबारी"))
+            candidates.append(val.replace("सबरी", "शबरी"))
+        elif "मदन" in val:
+            candidates.append(val.replace("मदन", "मदान"))
+            candidates.append(val.replace("मदन", "मदनपुर"))
+        elif "सीतापुर" in val:
+            candidates.append(val.replace("सीतापुर", "सितापुर"))
+        else:
+            if "स" in val:
+                candidates.append(val.replace("स", "श"))
+
+    elif lang == "te-IN":
+        if "సబరి" in val:
+            candidates.append(val.replace("సబరి", "సాబరి"))
+            candidates.append(val.replace("సబరి", "సభరి"))
+        elif "మదన" in val:
+            candidates.append(val.replace("మదన", "మదనా"))
+        else:
+            if "స" in val:
+                candidates.append(val.replace("స", "సా"))
+
+    unique_candidates = []
+    for c in candidates:
+        if c and c not in unique_candidates:
+            unique_candidates.append(c)
+        if len(unique_candidates) >= 3:
+            break
+
+    if len(unique_candidates) > 1:
+        if lang == "ta-IN":
+            note = f"'{unique_candidates[0]}' அல்லது '{unique_candidates[1]}' என இருக்கலாம் — ஒலி ஒரே மாதிரி இருப்பதால்"
+        elif lang == "hi-IN":
+            note = f"'{unique_candidates[0]}' या '{unique_candidates[1]}' हो सकता है — समान उच्चारण के कारण"
+        else:
+            note = f"'{unique_candidates[0]}' లేదా '{unique_candidates[1]}' కావచ్చు — సమాన ఉచ్చారణ కారణంగా"
+    else:
+        note = f"Phonetically unambiguous extraction for {val}"
+
+    return {
+        "candidates": unique_candidates,
+        "confidence_note": note
+    }
+
 class ExtractionService:
     """Abstracted LLM Extraction Service with Gemini and intelligent offline fallback."""
 
@@ -66,9 +137,18 @@ class ExtractionService:
         # Check for matching demo profile first for instant accuracy
         for profile in DEMO_PROFILES.values():
             if profile["transcript"].strip() in transcript or transcript.strip() in profile["transcript"]:
+                data = profile["data"].copy()
+                explanations = profile["explanations"].copy()
+                if language_code in ["ta-IN", "hi-IN", "te-IN"]:
+                    for f in ["applicant_name", "village_or_address"]:
+                        if data.get(f) and isinstance(data[f], str):
+                            cand_obj = generate_phonetic_candidates(data[f], f, language_code)
+                            if cand_obj:
+                                data[f] = cand_obj
+                                explanations[f] = cand_obj["confidence_note"]
                 return ExtractionResponse(
-                    data=LoanApplicationData(**profile["data"]),
-                    explanations=profile["explanations"],
+                    data=LoanApplicationData(**data),
+                    explanations=explanations,
                     raw_transcript=transcript,
                     language=language_code
                 )
@@ -77,7 +157,17 @@ class ExtractionService:
         if self.client:
             try:
                 logger.info("Calling Gemini API for structured field extraction...")
-                prompt = f"{SYSTEM_INSTRUCTION}\n\nSpoken Transcript:\n\"\"\"{transcript}\"\"\"\n\nReturn pure JSON matching the schema."
+                cand_instruction = ""
+                if language_code in ["ta-IN", "hi-IN", "te-IN"]:
+                    cand_instruction = (
+                        f"\nFor applicant_name and village_or_address, do not return a single string. "
+                        f"Instead return an object containing up to 3 ranked spelling variants that account for common phonetic ambiguity in {language_code}: "
+                        f"long vs short vowels, aspirated vs unaspirated consonants, and letters that sound identical in casual speech but differ in written form. "
+                        f"Format: {{\"candidates\": [\"variant1\", \"variant2\", ...], \"confidence_note\": \"reason\"}}. "
+                        f"Order candidates by likelihood, most likely first. If there is genuinely only one plausible spelling, return a single-element array. "
+                        f"Never invent a variant that wasn't phonetically plausible from the audio."
+                    )
+                prompt = f"{SYSTEM_INSTRUCTION}{cand_instruction}\n\nSpoken Transcript:\n\"\"\"{transcript}\"\"\"\n\nReturn pure JSON matching the schema."
                 
                 response = self.client.models.generate_content(
                     model='gemini-2.5-flash',
@@ -90,9 +180,25 @@ class ExtractionService:
                 if response and response.text:
                     parsed = json.loads(response.text)
                     explanations = parsed.pop("field_explanations", {})
+
+                    app_name = parsed.get("applicant_name")
+                    vill_addr = parsed.get("village_or_address")
+
+                    if language_code in ["ta-IN", "hi-IN", "te-IN"]:
+                        if app_name and isinstance(app_name, str):
+                            cand_obj = generate_phonetic_candidates(app_name, "applicant_name", language_code)
+                            if cand_obj:
+                                app_name = cand_obj
+                                explanations["applicant_name"] = cand_obj["confidence_note"]
+                        if vill_addr and isinstance(vill_addr, str):
+                            cand_obj = generate_phonetic_candidates(vill_addr, "village_or_address", language_code)
+                            if cand_obj:
+                                vill_addr = cand_obj
+                                explanations["village_or_address"] = cand_obj["confidence_note"]
+
                     loan_data = LoanApplicationData(
-                        applicant_name=parsed.get("applicant_name"),
-                        village_or_address=parsed.get("village_or_address"),
+                        applicant_name=app_name,
+                        village_or_address=vill_addr,
                         loan_amount=float(parsed.get("loan_amount")) if parsed.get("loan_amount") is not None else None,
                         loan_purpose=parsed.get("loan_purpose"),
                         monthly_income=float(parsed.get("monthly_income")) if parsed.get("monthly_income") is not None else None,
@@ -344,6 +450,18 @@ class ExtractionService:
                 explanations["aadhaar_last4"] = f"मैंने '{val}' को आधार के अंतिम 4 अंक समझा"
         else:
             explanations["aadhaar_last4"] = "Aadhaar number not mentioned" if is_english else ("ஆதார் எண் குறிப்பிடப்படவில்லை" if is_tamil else "आधार नंबर का उल्लेख नहीं मिला")
+
+        if language_code in ["ta-IN", "hi-IN", "te-IN"]:
+            if data.applicant_name and isinstance(data.applicant_name, str):
+                cand_obj = generate_phonetic_candidates(data.applicant_name, "applicant_name", language_code)
+                if cand_obj:
+                    data.applicant_name = cand_obj
+                    explanations["applicant_name"] = cand_obj["confidence_note"]
+            if data.village_or_address and isinstance(data.village_or_address, str):
+                cand_obj = generate_phonetic_candidates(data.village_or_address, "village_or_address", language_code)
+                if cand_obj:
+                    data.village_or_address = cand_obj
+                    explanations["village_or_address"] = cand_obj["confidence_note"]
 
         return ExtractionResponse(
             data=data,

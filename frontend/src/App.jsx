@@ -203,12 +203,64 @@ function translateEnglishToRegional(text, language) {
   return t;
 }
 
+function generateFrontendPhoneticCandidates(val, fieldName, lang) {
+  if (!val || typeof val !== 'string') return [val];
+  const cleanVal = val.trim();
+  if (!cleanVal) return [];
+
+  const isTargetLang = ['ta-IN', 'hi-IN', 'te-IN'].includes(lang);
+  const isTargetField = ['applicant_name', 'village_or_address'].includes(fieldName);
+  if (!isTargetLang || !isTargetField) return [cleanVal];
+
+  const candidates = [cleanVal];
+
+  if (lang === 'ta-IN') {
+    let alt1 = cleanVal;
+    if (alt1.includes('ச')) alt1 = alt1.replace(/ச/g, 'ஸ');
+    else if (alt1.includes('ஸ')) alt1 = alt1.replace(/ஸ/g, 'ச');
+
+    let alt2 = cleanVal;
+    if (alt2.includes('ர')) alt2 = alt2.replace(/ர/g, 'ற');
+    else if (alt2.includes('ற')) alt2 = alt2.replace(/ற/g, 'ர');
+
+    if (alt1 !== cleanVal && !candidates.includes(alt1)) candidates.push(alt1);
+    if (alt2 !== cleanVal && !candidates.includes(alt2)) candidates.push(alt2);
+  } else if (lang === 'hi-IN') {
+    let alt1 = cleanVal;
+    if (alt1.includes('श')) alt1 = alt1.replace(/श/g, 'स');
+    else if (alt1.includes('स')) alt1 = alt1.replace(/स/g, 'श');
+
+    let alt2 = cleanVal;
+    if (alt2.includes('ब')) alt2 = alt2.replace(/ब/g, 'व');
+    else if (alt2.includes('व')) alt2 = alt2.replace(/व/g, 'ब');
+
+    if (alt1 !== cleanVal && !candidates.includes(alt1)) candidates.push(alt1);
+    if (alt2 !== cleanVal && !candidates.includes(alt2)) candidates.push(alt2);
+  } else if (lang === 'te-IN') {
+    let alt1 = cleanVal;
+    if (alt1.includes('శ')) alt1 = alt1.replace(/శ/g, 'స');
+    else if (alt1.includes('స')) alt1 = alt1.replace(/స/g, 'శ');
+
+    let alt2 = cleanVal;
+    if (alt2.includes('బ')) alt2 = alt2.replace(/బ/g, 'వ');
+    else if (alt2.includes('వ')) alt2 = alt2.replace(/వ/g, 'బ');
+
+    if (alt1 !== cleanVal && !candidates.includes(alt1)) candidates.push(alt1);
+    if (alt2 !== cleanVal && !candidates.includes(alt2)) candidates.push(alt2);
+  }
+
+  return candidates.slice(0, 3);
+}
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState(PAGES.OVERVIEW);
   const [language, setLanguage] = useState('ta-IN');
   const [formData, setFormData] = useState({ ...DEFAULT_FORM_DATA });
   const [confirmedFields, setConfirmedFields] = useState([]);
   const [pendingConfirmField, setPendingConfirmField] = useState(null);
+  const [candidateQueue, setCandidateQueue] = useState(null); // { field, candidates, index, reRecordAttempted }
+  const [unverifiedFields, setUnverifiedFields] = useState([]);
+  const [reRecordAttemptedFields, setReRecordAttemptedFields] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeSanctionModal, setActiveSanctionModal] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -294,11 +346,13 @@ export default function App() {
     setFormData(demo);
     setConfirmedFields(FIELD_ORDER);
     setPendingConfirmField(null);
+    setCandidateQueue(null);
   };
 
   const handleUpdateField = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
     setPendingConfirmField(key);
+    setCandidateQueue(null);
     const confirmQ = buildConfirmQuestion(key, value, language);
     speakText(confirmQ, language);
   };
@@ -306,6 +360,7 @@ export default function App() {
   const handleConfirmField = (key) => {
     setConfirmedFields(prev => Array.from(new Set([...prev, key])));
     setPendingConfirmField(curr => (curr === key ? null : curr));
+    setCandidateQueue(null);
 
     const nextUnconfirmed = FIELD_ORDER.find(k => k !== key && (!formData[k] || !confirmedFields.includes(k)));
     if (nextUnconfirmed && !formData[nextUnconfirmed]) {
@@ -322,6 +377,7 @@ export default function App() {
     setFormData(prev => ({ ...prev, [key]: null }));
     setConfirmedFields(prev => prev.filter(k => k !== key));
     setPendingConfirmField(curr => (curr === key ? null : curr));
+    setCandidateQueue(null);
 
     const q = getFieldQuestion(key, language);
     speakText(q, language);
@@ -332,6 +388,9 @@ export default function App() {
     setFormData({ ...DEFAULT_FORM_DATA });
     setConfirmedFields([]);
     setPendingConfirmField(null);
+    setCandidateQueue(null);
+    setUnverifiedFields([]);
+    setReRecordAttemptedFields({});
 
     const q = getFieldQuestion('applicant_name', language);
     speakText(q, language);
@@ -342,6 +401,9 @@ export default function App() {
     setFormData({ ...DEFAULT_FORM_DATA });
     setConfirmedFields([]);
     setPendingConfirmField(null);
+    setCandidateQueue(null);
+    setUnverifiedFields([]);
+    setReRecordAttemptedFields({});
     setCurrentPage(PAGES.OVERVIEW);
   };
 
@@ -367,10 +429,12 @@ export default function App() {
           // User said YES!
           setConfirmedFields(prev => Array.from(new Set([...prev, activeKey])));
           setPendingConfirmField(null);
+          setCandidateQueue(null);
 
           const nextKey = FIELD_ORDER.find(k => k !== activeKey && (!formData[k] || !confirmedFields.includes(k)));
           const confirmText = language === 'ta-IN' ? 'நன்றி!'
             : language === 'hi-IN' ? 'धन्यवाद!'
+            : language === 'te-IN' ? 'ధన్యవాదాలు!'
             : 'Thank you!';
 
           if (nextKey) {
@@ -378,6 +442,7 @@ export default function App() {
             speakText(`${confirmText} ${nextQ}`, language);
           } else {
             const doneMsg = language === 'ta-IN' ? 'மிக்க நன்றி! அனைத்து விவரங்களும் உறுதிப்படுத்தப்பட்டுள்ளன.'
+              : language === 'hi-IN' ? 'बहुत धन्यवाद! सभी जानकारी दर्ज हो गई है।'
               : 'Thank you! All details are confirmed.';
             speakText(doneMsg, language);
           }
@@ -386,9 +451,77 @@ export default function App() {
 
         if (isNegativeConfirmation(spokenTranscript)) {
           // User said NO!
+          const isTargetLang = ['ta-IN', 'hi-IN', 'te-IN'].includes(language);
+          const isTargetField = ['applicant_name', 'village_or_address'].includes(activeKey);
+
+          if (isTargetLang && isTargetField && candidateQueue && candidateQueue.field === activeKey) {
+            const { candidates, index, reRecordAttempted } = candidateQueue;
+
+            if (index + 1 < candidates.length) {
+              // Try candidate at index + 1 without re-running STT/extraction
+              const nextIndex = index + 1;
+              const nextCand = candidates[nextIndex];
+              setCandidateQueue({
+                ...candidateQueue,
+                index: nextIndex
+              });
+              setFormData(prev => ({ ...prev, [activeKey]: nextCand }));
+
+              const confirmQ = buildConfirmQuestion(activeKey, nextCand, language);
+              speakText(confirmQ, language);
+              return;
+            } else {
+              // All candidates rejected for current attempt!
+              if (!reRecordAttempted && !reRecordAttemptedFields[activeKey]) {
+                // Prompt user for slow re-recording
+                setReRecordAttemptedFields(prev => ({ ...prev, [activeKey]: true }));
+                setCandidateQueue(null);
+                setFormData(prev => ({ ...prev, [activeKey]: null }));
+                setPendingConfirmField(null);
+
+                const promptReRecord = language === 'ta-IN'
+                  ? 'மன்னிக்கவும், விவரத்தை மீண்டும் மெதுவாக தெளிவாகக் கூறவும்.'
+                  : language === 'hi-IN'
+                  ? 'क्षमा करें, कृपया जानकारी फिर से धीरे और स्पष्ट रूप से बोलें।'
+                  : language === 'te-IN'
+                  ? 'క్షమించండి, దయచేసి వివరాలను మళ్లీ నెమ్మదిగా స్పష్టంగా చెప్పండి.'
+                  : 'Sorry, please speak the details slowly and clearly again.';
+                speakText(promptReRecord, language);
+                return;
+              } else {
+                // Exhausted 2nd attempt -> forced fallback to candidates[0]
+                const fallbackVal = candidates[0] || formData[activeKey] || '';
+                setFormData(prev => ({ ...prev, [activeKey]: fallbackVal }));
+                setUnverifiedFields(prev => Array.from(new Set([...prev, activeKey])));
+                setConfirmedFields(prev => Array.from(new Set([...prev, activeKey])));
+                setPendingConfirmField(null);
+                setCandidateQueue(null);
+
+                const fallbackMsg = language === 'ta-IN'
+                  ? `மன்னிக்கவும், நாம் '${fallbackVal}' என்று பதிவு செய்கிறோம். பிற மதிப்பாய்வு செய்யப்படும்.`
+                  : language === 'hi-IN'
+                  ? `क्षमा करें, हमने '${fallbackVal}' दर्ज किया है। बाद में समीक्षा की जाएगी।`
+                  : language === 'te-IN'
+                  ? `క్షमించండి, మేము '${fallbackVal}' నమోదు చేస్తున్నాము. తరువాత సమీక్షించబడుతుంది.`
+                  : `Recorded '${fallbackVal}' for review.`;
+
+                const nextKey = FIELD_ORDER.find(k => k !== activeKey && (!formData[k] || !confirmedFields.includes(k)));
+                if (nextKey) {
+                  const nextQ = getFieldQuestion(nextKey, language);
+                  speakText(`${fallbackMsg} ${nextQ}`, language);
+                } else {
+                  speakText(fallbackMsg, language);
+                }
+                return;
+              }
+            }
+          }
+
+          // Default negative confirmation for non-target fields
           setFormData(prev => ({ ...prev, [activeKey]: null }));
           setConfirmedFields(prev => prev.filter(k => k !== activeKey));
           setPendingConfirmField(null);
+          setCandidateQueue(null);
 
           const retryText = language === 'ta-IN' ? 'சரி, மீண்டும் சொல்லுங்கள்.'
             : language === 'hi-IN' ? 'ठीक है, फिर से बताएं।'
@@ -414,40 +547,67 @@ export default function App() {
           extractedData = extractFieldsOffline(spokenTranscript, language) || {};
         }
 
-        setFormData(prev => {
-          const targetField = pendingConfirmField || FIELD_ORDER.find(k => !prev[k] || !confirmedFields.includes(k)) || 'applicant_name';
-          const updated = { ...prev };
+        const targetField = pendingConfirmField || FIELD_ORDER.find(k => !formData[k] || !confirmedFields.includes(k)) || 'applicant_name';
+        const isTargetLang = ['ta-IN', 'hi-IN', 'te-IN'].includes(language);
+        const isTargetField = ['applicant_name', 'village_or_address'].includes(targetField);
 
-          let newValue = null;
-          if (extractedData[targetField]) {
-            newValue = extractedData[targetField];
+        let rawFieldVal = null;
+        let candList = [];
+
+        if (extractedData[targetField]) {
+          rawFieldVal = extractedData[targetField];
+        } else {
+          const misclassifiedKey = Object.keys(extractedData).find(k => extractedData[k] && (k !== targetField));
+          if (misclassifiedKey && extractedData[misclassifiedKey] && !confirmedFields.includes(targetField)) {
+            rawFieldVal = extractedData[misclassifiedKey];
           } else {
-            const misclassifiedKey = Object.keys(extractedData).find(k => extractedData[k] && (k !== targetField));
-            if (misclassifiedKey && extractedData[misclassifiedKey] && !confirmedFields.includes(targetField)) {
-              newValue = extractedData[misclassifiedKey];
+            if (targetField === 'loan_amount' || targetField === 'monthly_income') {
+              const numMatch = spokenTranscript.match(/\d+/);
+              rawFieldVal = numMatch ? parseFloat(numMatch[0]) : spokenTranscript;
+            } else if (targetField === 'aadhaar_last4') {
+              const digits = spokenTranscript.replace(/\D/g, '').slice(-4);
+              rawFieldVal = digits || spokenTranscript;
             } else {
-              if (targetField === 'loan_amount' || targetField === 'monthly_income') {
-                const numMatch = spokenTranscript.match(/\d+/);
-                newValue = numMatch ? parseFloat(numMatch[0]) : spokenTranscript;
-              } else if (targetField === 'aadhaar_last4') {
-                const digits = spokenTranscript.replace(/\D/g, '').slice(-4);
-                newValue = digits || spokenTranscript;
-              } else {
-                newValue = spokenTranscript;
-              }
+              rawFieldVal = spokenTranscript;
             }
           }
+        }
 
-          if (newValue) {
-            newValue = translateEnglishToRegional(newValue, language);
-            updated[targetField] = newValue;
-            setPendingConfirmField(targetField);
-            const question = buildConfirmQuestion(targetField, newValue, language);
-            speakText(question, language);
+        if (rawFieldVal) {
+          if (typeof rawFieldVal === 'object' && rawFieldVal.candidates) {
+            candList = rawFieldVal.candidates;
+          } else if (typeof rawFieldVal === 'string') {
+            const translated = translateEnglishToRegional(rawFieldVal, language);
+            candList = generateFrontendPhoneticCandidates(translated, targetField, language);
+          } else {
+            candList = [rawFieldVal];
           }
 
-          return updated;
-        });
+          if (isTargetLang && isTargetField && candList.length > 0) {
+            const selectedVal = candList[0];
+            const wasReRecorded = Boolean(reRecordAttemptedFields[targetField]);
+
+            setFormData(prev => ({ ...prev, [targetField]: selectedVal }));
+            setPendingConfirmField(targetField);
+            setCandidateQueue({
+              field: targetField,
+              candidates: candList,
+              index: 0,
+              reRecordAttempted: wasReRecorded
+            });
+
+            const question = buildConfirmQuestion(targetField, selectedVal, language);
+            speakText(question, language);
+          } else {
+            const finalVal = translateEnglishToRegional(typeof rawFieldVal === 'string' ? rawFieldVal : (candList[0] || rawFieldVal), language);
+            setFormData(prev => ({ ...prev, [targetField]: finalVal }));
+            setPendingConfirmField(targetField);
+            setCandidateQueue(null);
+
+            const question = buildConfirmQuestion(targetField, finalVal, language);
+            speakText(question, language);
+          }
+        }
       }
     } catch (err) {
       console.warn('Stop recording error:', err);
@@ -466,7 +626,8 @@ export default function App() {
         income_source: formData.income_source || 'Farming',
         aadhaar_last4: formData.aadhaar_last4 || '3210',
         language: language,
-        user_phone: user?.phone_number || '9876543210'
+        user_phone: user?.phone_number || '9876543210',
+        unverified_fields: unverifiedFields
       };
 
       if (!isOnline) {
@@ -700,6 +861,8 @@ export default function App() {
             formData={formData}
             confirmedFields={confirmedFields}
             pendingConfirmField={pendingConfirmField}
+            candidateQueue={candidateQueue}
+            unverifiedFields={unverifiedFields}
             onUpdateField={handleUpdateField}
             onConfirmField={handleConfirmField}
             onRetryField={handleRetryField}
