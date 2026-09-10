@@ -6,7 +6,9 @@ import {
   Copy,
   PlusCircle,
   Shield,
-  FileCheck
+  FileCheck,
+  CloudUpload,
+  WifiOff
 } from 'lucide-react';
 
 export default function ReceiptModal({
@@ -18,6 +20,7 @@ export default function ReceiptModal({
 }) {
   const isTamil = language === 'ta-IN';
   const isHindi = language === 'hi-IN';
+  const isOffline = receiptData?.is_offline || receiptData?.status === 'saved_offline';
 
   useEffect(() => {
     if (receiptData?.voice_receipt_text && onPlayReceipt) {
@@ -29,16 +32,26 @@ export default function ReceiptModal({
     <div className="receipt-card">
       {/* Header Success Animation */}
       <div className="receipt-icon-wrapper">
-        <div className="success-pulse-ring" />
-        <CheckCircle className="w-16 h-16 text-emerald-400" />
+        <div className={`success-pulse-ring ${isOffline ? 'bg-amber-500/20' : ''}`} />
+        {isOffline ? (
+          <CloudUpload className="w-16 h-16 text-amber-400" />
+        ) : (
+          <CheckCircle className="w-16 h-16 text-emerald-400" />
+        )}
       </div>
 
       <h2 className="receipt-title">
-        {isTamil
-          ? "விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!"
-          : isHindi
-          ? "आवेदन सफलतापूर्वक जमा हुआ!"
-          : "अर्ज यशस्वीरित्या जमा झाला!"}
+        {isOffline
+          ? (isTamil
+              ? "விண்ணப்பம் ஆஃப்லைனில் பாதுகாக்கப்பட்டது!"
+              : isHindi
+              ? "आवेदन ऑफ़लाइन सुरक्षित सहेज लिया गया!"
+              : "अर्ज ऑफलाइन सुरक्षित जतन झाला!")
+          : (isTamil
+              ? "விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!"
+              : isHindi
+              ? "आवेदन सफलतापूर्वक जमा हुआ!"
+              : "अर्ज यशस्वीरित्या जमा झाला!")}
       </h2>
 
       {/* Reference Number Badge */}
@@ -51,18 +64,31 @@ export default function ReceiptModal({
         </div>
       </div>
 
-      {/* Status Badge - Explicitly "pending verification" */}
+      {/* Status Badge */}
       <div className="status-badge-container">
-        <div className="status-pill pending">
-          <Clock className="w-5 h-5 text-amber-400" />
-          <span className="font-bold">
-            {isTamil
-              ? "சரிபார்ப்பில் உள்ளது (Pending Verification)"
-              : isHindi
-              ? "सत्यापन लंबित (Pending Verification)"
-              : "पडताळणी प्रलंबित (Pending Verification)"}
-          </span>
-        </div>
+        {isOffline ? (
+          <div className="status-pill offline flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-950/70 border border-amber-500/50 text-amber-300 text-xs font-bold">
+            <WifiOff className="w-4 h-4 text-amber-400" />
+            <span>
+              {isTamil
+                ? "ஆஃப்லைன்: இணையம் வந்ததும் தானாகவே வங்கிக்கு அனுப்பப்படும்"
+                : isHindi
+                ? "ऑफ़लाइन: इंटरनेट आने पर बैंक में सिंक होगा"
+                : "ऑफलाइन: इंटरनेट आल्यावर बँकेत सिंक होईल"}
+            </span>
+          </div>
+        ) : (
+          <div className="status-pill pending">
+            <Clock className="w-5 h-5 text-amber-400" />
+            <span className="font-bold">
+              {isTamil
+                ? "சரிபார்ப்பில் உள்ளது (Pending Verification)"
+                : isHindi
+                ? "सत्यापन लंबित (Pending Verification)"
+                : "पडताळणी प्रलंबित (Pending Verification)"}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Spoken Receipt Voice Audio Replay */}

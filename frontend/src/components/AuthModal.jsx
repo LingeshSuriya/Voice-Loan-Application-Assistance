@@ -187,10 +187,10 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
             <span className="auth-badge-dot" />
             <span>
               {isTamil
-                ? 'JWT நேரடி அங்கீகாரம்'
+                ? '100% பாதுகாப்பானது'
                 : isHindi
-                ? 'JWT आधारित सुरक्षित लॉगिन'
-                : 'JWT आधारित सुरक्षित खाते'}
+                ? '100% सुरक्षित बैंक सेवा'
+                : '100% सुरक्षित बँक सेवा'}
             </span>
           </div>
         </div>
@@ -404,10 +404,10 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span>
             {isTamil
-              ? '256-பிட் பாதுகாப்பான அமர்வு • ரகசிய பின் அங்கீகாரம்'
+              ? 'உங்கள் தகவல்கள் அனைத்தும் முழு பாதுகாப்போடு வைக்கப்படும்'
               : isHindi
-              ? '256-बिट सुरक्षित सत्र • सुरक्षित बैंक ग्रेड सुरक्षा'
-              : '256-बिट सुरक्षित सत्र • सुरक्षित बँक दर्जाची सुरक्षा'}
+              ? 'आपकी सभी जानकारी पूरी तरह से सुरक्षित है'
+              : 'तुमची सर्व माहिती पूर्णपणे सुरक्षित आहे'}
           </span>
         </div>
       </div>

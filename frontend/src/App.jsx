@@ -9,7 +9,10 @@ import {
   ShieldCheck,
   Building2,
   ChevronRight,
-  Info
+  Info,
+  Wifi,
+  WifiOff,
+  CloudUpload
 } from 'lucide-react';
 import LanguageSelect from './components/LanguageSelect';
 import ConsentBanner from './components/ConsentBanner';
@@ -28,6 +31,12 @@ import {
   submitApplication,
   synthesizeSpeech
 } from './services/api';
+import { extractFieldsOffline } from './services/offlineExtractor';
+import {
+  saveOfflineApplication,
+  getOfflineApplications,
+  syncPendingApplications
+} from './services/offlineSync';
 
 const STEPS = {
   CONSENT: 'CONSENT',
@@ -90,6 +99,57 @@ export default function App() {
 
   const { user, token, logout, isAuthenticated } = useAuth();
 
+  // Offline & Network State
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [syncNotice, setSyncNotice] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Network status listener & automatic background sync
+  useEffect(() => {
+    const handleStatusChange = () => {
+      const online = navigator.onLine;
+      setIsOnline(online);
+      if (online) {
+        handleAutoSync();
+      }
+    };
+
+    window.addEventListener('online', handleStatusChange);
+    window.addEventListener('offline', handleStatusChange);
+
+    // Initial check of local pending sync drafts
+    setPendingSyncCount(getOfflineApplications().length);
+
+    return () => {
+      window.removeEventListener('online', handleStatusChange);
+      window.removeEventListener('offline', handleStatusChange);
+    };
+  }, []);
+
+  const handleAutoSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const synced = await syncPendingApplications(submitApplication, token);
+      setPendingSyncCount(getOfflineApplications().length);
+      if (synced && synced.length > 0) {
+        const msg = language === 'ta-IN'
+          ? `${synced.length} ஆஃப்லைன் விண்ணப்பங்கள் வங்கிக்கு வெற்றிகரமாக அனுப்பப்பட்டன!`
+          : language === 'mr-IN'
+          ? `${synced.length} ऑफलाइन अर्ज बँकेत सिंक झाले!`
+          : `${synced.length} ऑफ़लाइन आवेदन बैंक में सफलतापूर्वक सिंक हो गए!`;
+        setSyncNotice(msg);
+        speakText(msg, language);
+        setTimeout(() => setSyncNotice(null), 6000);
+      }
+    } catch (err) {
+      console.warn('Sync failed:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // Keep document html lang and notranslate attributes in sync with selected language
   useEffect(() => {
     const langCode = language.split('-')[0] || 'hi';
@@ -109,11 +169,16 @@ export default function App() {
   }, []);
 
   /**
-   * Helper to play speech via backend TTS or fallback
+   * Helper to play speech via backend TTS or fallback (Bypasses network if offline)
    */
   const handleSpeak = async (text, overrideAudioBase64 = null) => {
     if (overrideAudioBase64) {
       speakText(text, language, overrideAudioBase64);
+      return;
+    }
+    // If device is offline, play local device speech directly without network delay
+    if (!navigator.onLine) {
+      speakText(text, language, null);
       return;
     }
     try {
@@ -140,14 +205,28 @@ export default function App() {
   };
 
   /**
-   * User finishes voice intake: send audio and live browser transcript to backend
+   * User finishes voice intake: send audio and live browser transcript to backend (or offline extractor)
    */
   const handleStopInitialRecord = async () => {
     const audioBlob = await stopRecording();
-    const liveText = audioBlob.transcript || liveTranscript || '';
+    const liveText = (audioBlob.transcript || liveTranscript || '').trim();
     setCurrentStep(STEPS.PROCESSING);
     setIsProcessingVoice(true);
 
+    // 1. If device is offline, run 100% in-browser offline entity extractor immediately
+    if (!navigator.onLine) {
+      console.log('Offline mode active: extracting fields locally in browser');
+      const offlineResult = extractFieldsOffline(liveText, language);
+      setTranscript(liveText || (language === 'ta-IN' ? 'ஆஃப்லைன் குரல் பதிவு' : 'ऑफ़लाइन वॉयस इनपुट'));
+      setFormData(offlineResult.data || {});
+      setExplanations(offlineResult.explanations || {});
+      setCurrentFieldIndex(0);
+      setCurrentStep(STEPS.CONFIRM_LOOP);
+      setIsProcessingVoice(false);
+      return;
+    }
+
+    // 2. Online: Send audio to backend API for transcription & extraction
     try {
       const res = await processVoiceIntake(audioBlob, language, liveText);
       setTranscript(res.transcript || liveText);
@@ -156,11 +235,13 @@ export default function App() {
       setCurrentFieldIndex(0);
       setCurrentStep(STEPS.CONFIRM_LOOP);
     } catch (err) {
-      console.error('Initial voice intake failed:', err);
-      // If error, load default fallback demo profile
-      if (demoProfiles.length > 0) {
-        loadDemoProfile(demoProfiles[0]);
-      }
+      console.warn('Backend intake failed, switching to local offline extractor:', err);
+      const offlineResult = extractFieldsOffline(liveText, language);
+      setTranscript(liveText || 'Voice intake');
+      setFormData(offlineResult.data || {});
+      setExplanations(offlineResult.explanations || {});
+      setCurrentFieldIndex(0);
+      setCurrentStep(STEPS.CONFIRM_LOOP);
     } finally {
       setIsProcessingVoice(false);
     }
@@ -239,37 +320,67 @@ export default function App() {
   };
 
   /**
-   * Final Submission
+   * Final Submission (Online or Local Offline Queue)
    */
   const handleSubmitApplication = async () => {
     stopSpeaking();
     setIsSubmitting(true);
+
+    const payload = {
+      ...formData,
+      language,
+      transcript,
+      user_phone: user?.phone_number || null,
+    };
+
+    // 1. If device is currently offline, queue application locally
+    if (!navigator.onLine) {
+      console.log('Saving application to offline local queue...');
+      const draft = saveOfflineApplication(payload);
+      setPendingSyncCount(getOfflineApplications().length);
+      const offlineRef = draft?.offline_ref || `OFFLINE-LN-${Math.floor(10000 + Math.random() * 90000)}`;
+
+      const offlineVoice = language === 'ta-IN'
+        ? `விண்ணப்பம் உங்கள் சாதனத்தில் பாதுகாப்பாக சேமிக்கப்பட்டது. குறிப்பு எண் ${offlineRef}. இணையம் வந்ததும் தானாகவே வங்கிக்கு அனுப்பப்படும்.`
+        : language === 'mr-IN'
+        ? `अर्ज डिव्हाइसमध्ये सुरक्षित जतन झाला आहे. संदर्भ क्रमांक ${offlineRef}. इंटरनेट आल्यावर बँकेत सिंक होईल.`
+        : `आवेदन डिवाइस में सुरक्षित सहेज लिया गया है। संदर्भ नंबर ${offlineRef} है। इंटरनेट आते ही बैंक में सिंक हो जाएगा।`;
+
+      setReceiptData({
+        reference_no: offlineRef,
+        status: 'saved_offline',
+        voice_receipt_text: offlineVoice,
+        disclaimer: language === 'ta-IN'
+          ? 'ஆஃப்லைன் முறை: சாதனம் இணையத்துடன் இணையும் போது தானாகவே வங்கிக்கு பதிவேற்றப்படும்.'
+          : 'ऑफ़लाइन मोड: डिवाइस इंटरनेट से जुड़ते ही बैंक सर्वर पर सुरक्षित सिंक हो जाएगा।',
+        is_offline: true,
+      });
+      setCurrentStep(STEPS.RECEIPT);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2. Online submission to bank backend API
     try {
-      const payload = {
-        ...formData,
-        language,
-        transcript,
-        user_phone: user?.phone_number || null,
-      };
       const res = await submitApplication(payload, token);
       setReceiptData(res);
       setCurrentStep(STEPS.RECEIPT);
     } catch (err) {
-      console.error('Submission failed:', err);
-      // Mock fallback receipt if network fails
-      const mockRef = `LN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-      const mockReceiptVoice = language === 'ta-IN'
-        ? `வாழ்த்துகள்! உங்கள் விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. உங்கள் குறிப்பு எண் ${mockRef}. தற்போதைய நிலை: சரிபார்ப்பில் உள்ளது.`
-        : language === 'mr-IN'
-        ? `अभिनंदन! तुमचा अर्ज यशस्वीरित्या जमा झाला आहे. तुमचा संदर्भ क्रमांक ${mockRef} आहे. सद्यस्थिती: पडताळणी प्रलंबित.`
-        : `बधाई हो! आपका आवेदन सफलतापूर्वक जमा हो गया है। आपका संदर्भ नंबर ${mockRef} है। वर्तमान स्थिति: सत्यापन के लिए लंबित है।`;
+      console.warn('Network submission failed, queueing offline:', err);
+      const draft = saveOfflineApplication(payload);
+      setPendingSyncCount(getOfflineApplications().length);
+      const offlineRef = draft?.offline_ref || `OFFLINE-LN-${Math.floor(10000 + Math.random() * 90000)}`;
+
+      const offlineVoice = language === 'ta-IN'
+        ? `விண்ணப்பம் உங்கள் சாதனத்தில் பாதுகாப்பாக சேமிக்கப்பட்டது. இணைய இணைப்பு வந்தவுடன் வங்கிக்கு அனுப்பப்படும்.`
+        : `आवेदन ऑफ़लाइन सुरक्षित सहेजा गया। इंटरनेट आते ही बैंक में सिंक हो जाएगा।`;
 
       setReceiptData({
-        reference_no: mockRef,
-        status: 'pending verification',
-        voice_receipt_text: mockReceiptVoice,
-        disclaimer: "Identity verification happens downstream via the lender's existing KYC pipeline before any disbursal.",
-        user_phone: user?.phone_number || null,
+        reference_no: offlineRef,
+        status: 'saved_offline',
+        voice_receipt_text: offlineVoice,
+        disclaimer: 'Saved locally in offline queue. Will sync automatically once online.',
+        is_offline: true,
       });
       setCurrentStep(STEPS.RECEIPT);
     } finally {
@@ -317,6 +428,38 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Network Status Badge */}
+          <div className="network-status-badge">
+            {isOnline ? (
+              <div className="online-pill" title="Connected to bank server">
+                <span className="online-dot" />
+                <Wifi className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-semibold">{isTamil ? 'ஆன்லைன்' : isHindi ? 'ऑनलाइन' : 'ऑनलाइन'}</span>
+              </div>
+            ) : (
+              <div className="offline-pill" title="Working 100% locally on device">
+                <WifiOff className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-bold">{isTamil ? 'ஆஃப்லைன்' : isHindi ? 'ऑफ़लाइन' : 'ऑफलाइन'}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Pending Sync Button (Only visible if offline drafts exist) */}
+          {pendingSyncCount > 0 && (
+            <button
+              type="button"
+              className="btn-sync-pill"
+              onClick={handleAutoSync}
+              disabled={isSyncing || !isOnline}
+              title={isOnline ? "Sync pending offline applications" : "Connect to internet to sync"}
+            >
+              <CloudUpload className={`w-3.5 h-3.5 text-amber-400 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="text-[11px] font-bold text-amber-300">
+                {pendingSyncCount} {isTamil ? 'ஒத்திசை' : isHindi ? 'सिंक' : 'सिंक'}
+              </span>
+            </button>
+          )}
+
           {isAuthenticated ? (
             <div className="auth-user-pill">
               <span className="dot-green" />
@@ -358,6 +501,14 @@ export default function App() {
           )}
         </div>
       </header>
+
+      {/* Auto-Sync Toast Notification */}
+      {syncNotice && (
+        <div className="sync-notice-banner animate-fadeIn">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="text-xs font-semibold text-emerald-200">{syncNotice}</span>
+        </div>
+      )}
 
       {/* Main Flow Container */}
       <main className="main-content">
