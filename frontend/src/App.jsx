@@ -147,14 +147,21 @@ export default function App() {
 
   const handleConfirmField = (key) => {
     const fieldNames = {
-      'ta-IN': { applicant_name:'பெயர்', village_or_address:'முகவரி', loan_amount:'கடன் தொகை', loan_purpose:'நோக்கம்', monthly_income:'வருமானம்', income_source:'வருமான ஆதாரம்', aadhaar_last4:'ஆதார்' },
-      'hi-IN': { applicant_name:'नाम', village_or_address:'पता', loan_amount:'लोन राशि', loan_purpose:'उद्देश्य', monthly_income:'आमदनी', income_source:'स्रोत', aadhaar_last4:'आधार' },
+      'ta-IN': { applicant_name:'முழு பெயர்', village_or_address:'முகவரி', loan_amount:'கடன் தொகை', loan_purpose:'தொழில் நோக்கம்', monthly_income:'மாத வருமானம்', income_source:'வருமான ஆதாரம்', aadhaar_last4:'ஆதார்' },
+      'hi-IN': { applicant_name:'पूरा नाम', village_or_address:'पता', loan_amount:'लोन राशि', loan_purpose:'लोन उद्देश्य', monthly_income:'मासिक आय', income_source:'आय स्रोत', aadhaar_last4:'आधार' },
     };
     const names = fieldNames[language] || {};
     const label = names[key] || key;
-    const confirmMsg = language === 'ta-IN' ? `${label} உறுதிப்படுத்தப்பட்டது.`
-      : language === 'hi-IN' ? `${label} सही दर्ज हो गया।`
-      : `${label} confirmed.`;
+    const val = formData[key];
+    let displayVal = val || '';
+    if (val && (key === 'loan_amount' || key === 'monthly_income')) {
+      displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
+    } else if (val && key === 'aadhaar_last4') {
+      displayVal = `கடைசி 4 எண்கள் ${val}`;
+    }
+    const confirmMsg = language === 'ta-IN' ? `${label} ${displayVal} சரியாக பதிவாகியுள்ளது.`
+      : language === 'hi-IN' ? `${label} ${displayVal} सही दर्ज हो गया।`
+      : `${label} ${displayVal} confirmed.`;
     speakText(confirmMsg, language);
   };
 
@@ -186,29 +193,74 @@ export default function App() {
   const handleStopSessionRecord = async () => {
     try {
       const audioBlob = await stopRecording();
-      const spokenTranscript = (audioBlob && audioBlob.transcript) || liveTranscript || '';
+      const spokenTranscript = ((audioBlob && audioBlob.transcript) || liveTranscript || '').trim();
+      const fieldOrder = [
+        'applicant_name',
+        'village_or_address',
+        'loan_amount',
+        'loan_purpose',
+        'monthly_income',
+        'income_source',
+        'aadhaar_last4'
+      ];
+
       if (audioBlob) {
         if (!isOnline) {
-          const offlineExtracted = extractFieldsOffline(spokenTranscript, language);
-          setFormData(prev => ({ ...prev, ...offlineExtracted }));
+          const offlineExtracted = extractFieldsOffline(spokenTranscript, language) || {};
+          setFormData(prev => {
+            const targetField = fieldOrder.find(k => !prev[k]) || 'applicant_name';
+            const updated = { ...prev };
+            updated[targetField] = offlineExtracted[targetField] || spokenTranscript;
+            return updated;
+          });
         } else {
           try {
             const res = await processVoiceIntake(audioBlob, language, spokenTranscript);
-            if (res && res.data) {
-              setFormData(prev => ({
-                applicant_name: res.data.applicant_name || prev.applicant_name,
-                village_or_address: res.data.village_or_address || prev.village_or_address,
-                loan_amount: res.data.loan_amount || prev.loan_amount,
-                loan_purpose: res.data.loan_purpose || prev.loan_purpose,
-                monthly_income: res.data.monthly_income || prev.monthly_income,
-                income_source: res.data.income_source || prev.income_source,
-                aadhaar_last4: res.data.aadhaar_last4 || prev.aadhaar_last4,
-              }));
-            }
+            const data = res?.data || {};
+            setFormData(prev => {
+              const targetField = fieldOrder.find(k => !prev[k]) || null;
+              const updated = { ...prev };
+
+              if (targetField) {
+                if (data[targetField]) {
+                  updated[targetField] = data[targetField];
+                } else if (spokenTranscript) {
+                  // Find if LLM misclassified speech into another key
+                  const misclassifiedKey = Object.keys(data).find(k => data[k] && (k !== targetField));
+                  if (misclassifiedKey && data[misclassifiedKey] && !prev[targetField]) {
+                    updated[targetField] = data[misclassifiedKey];
+                  } else {
+                    if (targetField === 'loan_amount' || targetField === 'monthly_income') {
+                      const numMatch = spokenTranscript.match(/\d+/);
+                      updated[targetField] = numMatch ? parseFloat(numMatch[0]) : spokenTranscript;
+                    } else if (targetField === 'aadhaar_last4') {
+                      const digits = spokenTranscript.replace(/\D/g, '').slice(-4);
+                      updated[targetField] = digits || spokenTranscript;
+                    } else {
+                      updated[targetField] = spokenTranscript;
+                    }
+                  }
+                }
+              }
+
+              // Fill other empty fields if LLM returned them, but NEVER overwrite existing filled fields
+              fieldOrder.forEach(k => {
+                if (!prev[k] && data[k] && k !== targetField) {
+                  updated[k] = data[k];
+                }
+              });
+
+              return updated;
+            });
           } catch (err) {
             console.warn('Online intake fallback to offline regex:', err);
-            const offlineExtracted = extractFieldsOffline(spokenTranscript, language);
-            setFormData(prev => ({ ...prev, ...offlineExtracted }));
+            setFormData(prev => {
+              const targetField = fieldOrder.find(k => !prev[k]) || 'applicant_name';
+              const offlineExtracted = extractFieldsOffline(spokenTranscript, language) || {};
+              const updated = { ...prev };
+              updated[targetField] = offlineExtracted[targetField] || spokenTranscript;
+              return updated;
+            });
           }
         }
       }

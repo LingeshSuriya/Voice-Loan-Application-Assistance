@@ -663,10 +663,6 @@ export default function VoiceSessionStudio({
                           className="btn-field-confirm"
                           onClick={() => {
                             if (onConfirmField) onConfirmField(key);
-                            const confirmMsg = language === 'ta-IN'
-                              ? `${fieldLabel} சரியாக பதிவாகியுள்ளது.`
-                              : (language === 'hi-IN' ? `${fieldLabel} सही दर्ज हो गया।` : `${fieldLabel} confirmed.`);
-                            if (onPlayTTS) onPlayTTS(confirmMsg, language);
                           }}
                           title={language === 'ta-IN' ? 'குரல் உறுதிப்படுத்து' : language === 'hi-IN' ? 'पुष्टि करें' : 'Confirm field'}
                         >
