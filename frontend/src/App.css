@@ -673,13 +673,30 @@
   padding: 44px 48px;
   color: #ffffff;
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 1fr 260px;
   align-items: center;
-  gap: 40px;
+  gap: 48px;
   box-shadow: 0 20px 45px -10px rgba(15, 118, 110, 0.35);
   position: relative;
   overflow: hidden;
 }
+
+.hero-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.hero-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 
 .hero-radar-orbital-wrap {
   width: 220px;

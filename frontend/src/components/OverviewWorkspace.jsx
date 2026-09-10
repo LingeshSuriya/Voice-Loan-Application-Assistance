@@ -37,7 +37,12 @@ export default function OverviewWorkspace({
         <div className="workspace-lang-pill">
           <Languages className="w-4 h-4 text-emerald-600" />
           <span className="text-xs font-bold text-slate-700">
-            {language === 'ta-IN' ? 'தமிழ் (Tamil)' : language === 'hi-IN' ? 'हिन्दी (Hindi)' : 'English'}
+            {language === 'ta-IN' ? 'தமிழ் (Tamil)'
+              : language === 'hi-IN' ? 'हिन्दी (Hindi)'
+              : language === 'te-IN' ? 'తెలుగు (Telugu)'
+              : language === 'ml-IN' ? 'മലയാളം (Malayalam)'
+              : language === 'mr-IN' ? 'मराठी (Marathi)'
+              : 'English'}
           </span>
         </div>
       </div>
