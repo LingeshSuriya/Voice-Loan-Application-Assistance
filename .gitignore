@@ -1,0 +1,37 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.venv/
+backend/.venv/
+env/
+venv/
+ENV/
+build/
+dist/
+.pytest_cache/
+
+# Databases & local stores
+*.db
+*.sqlite
+*.sqlite3
+voice_loan.db
+backend/voice_loan.db
+
+# Secrets & Environment
+.env
+backend/.env
+!.env.example
+!backend/.env.example
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.npm
+.eslintcache
+
+# OS
+.DS_Store
+Thumbs.db

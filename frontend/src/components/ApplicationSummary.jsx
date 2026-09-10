@@ -1,0 +1,169 @@
+import React, { useEffect } from 'react';
+import {
+  User,
+  MapPin,
+  IndianRupee,
+  Briefcase,
+  TrendingUp,
+  Coins,
+  ShieldCheck,
+  Volume2,
+  Send,
+  RotateCcw,
+  CheckCircle2,
+  FileText
+} from 'lucide-react';
+
+const FIELD_CONFIG = [
+  { key: 'applicant_name', icon: User, labelTa: 'விண்ணப்பதாரர் பெயர்', labelHi: 'आवेदक का नाम', labelMr: 'अर्जदाराचे नाव' },
+  { key: 'village_or_address', icon: MapPin, labelTa: 'ஊர் / முகவரி', labelHi: 'गाँव / पता', labelMr: 'गाव / पत्ता' },
+  { key: 'loan_amount', icon: IndianRupee, labelTa: 'கடன் தொகை', labelHi: 'लोन राशि', labelMr: 'कर्ज रक्कम', isCurrency: true },
+  { key: 'loan_purpose', icon: Briefcase, labelTa: 'கடன் நோக்கம்', labelHi: 'लोन का उद्देश्य', labelMr: 'कर्जाचे कारण' },
+  { key: 'monthly_income', icon: TrendingUp, labelTa: 'மாத வருமானம்', labelHi: 'मासिक कमाई', labelMr: 'मासिक उत्पन्न', isCurrency: true },
+  { key: 'income_source', icon: Coins, labelTa: 'வருமான ஆதாரம்', labelHi: 'कमाई का साधन', labelMr: 'उत्पन्नाचे साधन' },
+  { key: 'aadhaar_last4', icon: ShieldCheck, labelTa: 'ஆதார் கடைசி 4 எண்கள்', labelHi: 'आधार अंतिम 4 अंक', labelMr: 'आधार शेवटचे 4 अंक', isAadhaar: true },
+];
+
+export default function ApplicationSummary({
+  formData,
+  language = 'hi-IN',
+  onSubmit,
+  isSubmitting,
+  onPlaySummary,
+  onEditField,
+  isSpeaking
+}) {
+  const isTamil = language === 'ta-IN';
+  const isHindi = language === 'hi-IN';
+
+  // Construct complete spoken summary
+  const summaryText = isTamil
+    ? `உங்கள் கடன் விண்ணப்பம் தயாராக உள்ளது. பெயர்: ${formData.applicant_name || 'குறிப்பிடப்படவில்லை'}, ஊர்: ${formData.village_or_address || 'குறிப்பிடப்படவில்லை'}, கடன் தொகை: ${formData.loan_amount ? formData.loan_amount + ' ரூபாய்' : 'குறிப்பிடப்படவில்லை'}, நோக்கம்: ${formData.loan_purpose || 'குறிப்பிடப்படவில்லை'}, மாத வருமானம்: ${formData.monthly_income ? formData.monthly_income + ' ரூபாய்' : 'குறிப்பிடப்படவில்லை'}. இதை வங்கியில் சமர்ப்பிக்கலாமா?`
+    : isHindi
+    ? `आपका आवेदन तैयार है। नाम: ${formData.applicant_name || 'अज्ञात'}, गाँव: ${formData.village_or_address || 'अज्ञात'}, लोन राशि: ${formData.loan_amount ? formData.loan_amount + ' रुपये' : 'अज्ञात'}, उद्देश्य: ${formData.loan_purpose || 'अज्ञात'}, मासिक कमाई: ${formData.monthly_income ? formData.monthly_income + ' रुपये' : 'अज्ञात'}। क्या मैं इसे जमा कर दूँ?`
+    : `तुमचा अर्ज तयार आहे. नाव: ${formData.applicant_name || 'अज्ञात'}, गाव: ${formData.village_or_address || 'अज्ञात'}, कर्ज रक्कम: ${formData.loan_amount ? formData.loan_amount + ' रुपये' : 'अज्ञात'}, कारण: ${formData.loan_purpose || 'अज्ञात'}, मासिक उत्पन्न: ${formData.monthly_income ? formData.monthly_income + ' रुपये' : 'अज्ञात'}। मी हा अर्ज जमा करू का?`;
+
+  useEffect(() => {
+    if (onPlaySummary) {
+      onPlaySummary(summaryText);
+    }
+  }, []);
+
+  return (
+    <div className="summary-container">
+      <div className="summary-header">
+        <div className="flex items-center gap-2 justify-center mb-1">
+          <FileText className="w-6 h-6 text-emerald-400" />
+          <h2 className="text-xl font-bold text-white">
+            {isTamil ? "விண்ணப்ப சுருக்கம்" : isHindi ? "आवेदन सारांश" : "अर्ज सारांश"}
+          </h2>
+        </div>
+        <p className="text-xs text-slate-300 text-center">
+          {isTamil
+            ? "தயவுசெய்து உங்கள் விவரங்களை சரிபார்த்து சமர்ப்பிக்கவும்"
+            : isHindi
+            ? "कृपया अपने सभी विवरण जांच लें और जमा करें"
+            : "कृपया तुमचे सर्व तपशील तपासा आणि जमा करा"}
+        </p>
+
+        {/* Listen Again Button */}
+        <button
+          type="button"
+          className={`btn-listen-summary ${isSpeaking ? 'pulse-border' : ''}`}
+          onClick={() => onPlaySummary && onPlaySummary(summaryText)}
+        >
+          <Volume2 className="w-5 h-5 text-amber-400" />
+          <span>
+            {isTamil
+              ? "முழு விண்ணப்பத்தையும் கேட்க"
+              : isHindi
+              ? "पूरा आवेदन बोलकर सुनें"
+              : "पूर्ण अर्ज ऐका"}
+          </span>
+        </button>
+      </div>
+
+      {/* Summary Items Grid */}
+      <div className="summary-fields-list">
+        {FIELD_CONFIG.map((field) => {
+          const Icon = field.icon;
+          const val = formData[field.key];
+          let displayVal = val || (isTamil ? "இல்லை" : isHindi ? "अनुपलब्ध" : "उपलब्ध नाही");
+          if (field.isCurrency && val) {
+            displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
+          } else if (field.isAadhaar && val) {
+            displayVal = `XXXX-XXXX-${val}`;
+          }
+
+          return (
+            <div key={field.key} className="summary-field-row">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-slate-800 text-blue-400">
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400">
+                    {isTamil ? field.labelTa : isHindi ? field.labelHi : field.labelMr}
+                  </div>
+                  <div className="text-base font-bold text-white">
+                    {displayVal}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-edit-small"
+                onClick={() => onEditField && onEditField(field.key)}
+                title="Edit"
+              >
+                <RotateCcw className="w-4 h-4 text-slate-400" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Submission CTA */}
+      <div className="summary-submit-box mt-6">
+        <button
+          type="button"
+          className="btn-submit-app"
+          onClick={onSubmit}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <div className="spinner-small" />
+              <span>
+                {isTamil
+                  ? "சமர்ப்பிக்கப்படுகிறது..."
+                  : isHindi
+                  ? "जमा किया जा रहा है..."
+                  : "जमा होत आहे..."}
+              </span>
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-3">
+              <CheckCircle2 className="w-7 h-7 text-white" />
+              <span className="text-lg font-bold">
+                {isTamil
+                  ? "கடன் விண்ணப்பத்தை சமர்ப்பிக்கவும்"
+                  : isHindi
+                  ? "आवेदन जमा करें"
+                  : "अर्ज जमा करा"}
+              </span>
+            </span>
+          )}
+        </button>
+
+        <p className="disclaimer-text">
+          {isTamil
+            ? "இது ஒரு பாதுகாப்பான விண்ணப்பம். கடன் தொகை வழங்குவதற்கு முன் முறையான சரிபார்ப்பு செய்யப்படும்."
+            : isHindi
+            ? "यह एक सुरक्षित बैंक आवेदन है। किसी भी भुगतान से पहले वास्तविक सत्यापन किया जाएगा।"
+            : "हा एक सुरक्षित बँक अर्ज आहे. वितरणापूर्वी प्रत्यक्ष पडताळणी केली जाईल."}
+        </p>
+      </div>
+    </div>
+  );
+}
