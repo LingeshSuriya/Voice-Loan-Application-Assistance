@@ -162,7 +162,14 @@ export function VoiceAudioProvider({ children }) {
       launchSpeechRecognition(language);
 
       // 2. Set up AudioContext for waveform visualization + PCM capture for Sarvam fallback
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+        video: false
+      });
 
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       const audioCtx = new AudioCtx();

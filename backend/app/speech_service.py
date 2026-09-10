@@ -59,14 +59,16 @@ class SpeechService:
             clean_text = re.sub(r'\([A-Za-z0-9\s.,-]+\)', '', clean_text)
         clean_text = re.sub(r'\s+', ' ', clean_text).strip()
 
-        # Map language to active, valid bulbul:v3 speakers
+        # Map language to active, valid high-fidelity bulbul:v3 speakers
         speaker_map = {
             "ta-IN": "kavitha",
-            "hi-IN": "priya",
+            "hi-IN": "meera",
+            "te-IN": "kavya",
+            "ml-IN": "kavya",
             "mr-IN": "rupali",
-            "en-IN": "priya",
+            "en-IN": "arvind",
         }
-        speaker = speaker_map.get(language_code, "priya")
+        speaker = speaker_map.get(language_code, "kavitha")
 
         if self.api_key:
             try:
