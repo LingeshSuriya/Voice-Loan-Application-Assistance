@@ -380,11 +380,11 @@ def handle_field_confirmation(payload: FieldConfirmRequest):
     response_text = (payload.user_response or "").strip().lower()
     is_positive = any(w in response_text for w in [
         "haan", "ha", "yes", "sahi", "theek", "बरोबर", "होय", "हाँ",
-        "ஆம்", "ஆமா", "சரி", "சரிங்க", "சரியா", "ok", "correct"
+        "ஆம்", "ஆமா", "சரி", "சரிங்க", "சரியா", "ok", "correct", "right", "sure", "confirmed", "true"
     ])
     is_negative = any(w in response_text for w in [
         "nahi", "na", "no", "galat", "नाही", "ना", "नहीं",
-        "இல்லை", "இல்ல", "தவறு", "தப்பு", "மாத்து", "மாற்று"
+        "இல்லை", "இல்ல", "தவறு", "தப்பு", "மாத்து", "மாற்று", "wrong", "change", "incorrect", "nope", "false"
     ])
 
     if is_positive and not is_negative:
@@ -394,6 +394,9 @@ def handle_field_confirmation(payload: FieldConfirmRequest):
         elif lang == "mr-IN":
             explanation_text = f"{field_label} पडताळले गेले"
             tts_text = f"{field_label} बरोबर आहे."
+        elif lang == "en-IN":
+            explanation_text = f"{field_label} verified"
+            tts_text = f"{field_label} confirmed."
         else:
             explanation_text = f"{field_label} सत्यापित हुआ"
             tts_text = f"{field_label} ठीक है।"

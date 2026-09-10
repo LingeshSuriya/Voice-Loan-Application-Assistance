@@ -37,16 +37,47 @@ export default function MicRecorder({
 
   const isTamil = language === 'ta-IN';
   const isHindi = language === 'hi-IN';
-  const defaultPrompt = isTamil
+  const isEnglish = language === 'en-IN';
+
+  const defaultPrompt = isEnglish
+    ? "Please speak: your name, city, loan amount required, and loan purpose."
+    : isTamil
     ? "இப்போது பேசுங்கள்: உங்கள் பெயர், ஊர், எவ்வளவு கடன் வேண்டும் மற்றும் எதற்காக?"
     : isHindi
     ? "बोलिए: आपका नाम, गाँव, कितना लोन चाहिए और किस काम के लिए?"
     : "बोला: तुमचे नाव, गाव, किती कर्ज हवे आणि कशासाठी?";
 
-  const actionDoneText = isTamil ? "முடிந்தது (சமர்ப்பி)" : (isHindi ? "हो गया (समाप्त)" : "झाले (पूर्ण)");
-  const tapToSpeakText = isTamil ? "மைக் அழுத்தி பேசவும்" : (isHindi ? "माइक दबाएं और बोलें" : "माइक दाबा आणि बोला");
-  const listeningText = isTamil ? "கேட்கிறேன்... பேசுங்கள்" : (isHindi ? "सुन रहा हूँ... बोलिए" : "ऐकत आहे... बोला");
-  const processingText = isTamil ? "புரிந்து கொள்கிறேன்..." : (isHindi ? "समझ रहा हूँ..." : "समजून घेत आहे...");
+  const actionDoneText = isEnglish
+    ? "Done (Submit Voice)"
+    : isTamil
+    ? "முடிந்தது (சமர்ப்பி)"
+    : isHindi
+    ? "हो गया (समाप्त)"
+    : "झाले (पूर्ण)";
+
+  const tapToSpeakText = isEnglish
+    ? "Tap Mic & Speak"
+    : isTamil
+    ? "மைக் அழுத்தி பேசவும்"
+    : isHindi
+    ? "माइक दबाएं और बोलें"
+    : "माइक दाबा आणि बोला";
+
+  const listeningText = isEnglish
+    ? "Listening... Please speak"
+    : isTamil
+    ? "கேட்கிறேன்... பேசுங்கள்"
+    : isHindi
+    ? "सुन रहा हूँ... बोलिए"
+    : "ऐकत आहे... बोला";
+
+  const processingText = isEnglish
+    ? "Understanding your voice..."
+    : isTamil
+    ? "புரிந்து கொள்கிறேன்..."
+    : isHindi
+    ? "समझ रहा हूँ..."
+    : "समजून घेत आहे...";
 
   return (
     <div className="mic-recorder-card">
@@ -116,7 +147,9 @@ export default function MicRecorder({
 
       <div className="mic-hint-footer">
         <p className="text-xs text-slate-400">
-          {isTamil
+          {isEnglish
+            ? "Speak naturally in your voice. No typing or writing is required."
+            : isTamil
             ? "உங்கள் சொந்த மொழியில் இயல்பாக பேசுங்கள். எழுத வேண்டிய அவசியமில்லை."
             : isHindi
             ? "अपनी भाषा में सामान्य तरीके से बोलें। कुछ लिखने की जरूरत नहीं है।"

@@ -15,13 +15,13 @@ import {
 } from 'lucide-react';
 
 const FIELD_CONFIG = [
-  { key: 'applicant_name', icon: User, labelTa: 'விண்ணப்பதாரர் பெயர்', labelHi: 'आवेदक का नाम', labelMr: 'अर्जदाराचे नाव' },
-  { key: 'village_or_address', icon: MapPin, labelTa: 'ஊர் / முகவரி', labelHi: 'गाँव / पता', labelMr: 'गाव / पत्ता' },
-  { key: 'loan_amount', icon: IndianRupee, labelTa: 'கடன் தொகை', labelHi: 'लोन राशि', labelMr: 'कर्ज रक्कम', isCurrency: true },
-  { key: 'loan_purpose', icon: Briefcase, labelTa: 'கடன் நோக்கம்', labelHi: 'लोन का उद्देश्य', labelMr: 'कर्जाचे कारण' },
-  { key: 'monthly_income', icon: TrendingUp, labelTa: 'மாத வருமானம்', labelHi: 'मासिक कमाई', labelMr: 'मासिक उत्पन्न', isCurrency: true },
-  { key: 'income_source', icon: Coins, labelTa: 'வருமான ஆதாரம்', labelHi: 'कमाई का साधन', labelMr: 'उत्पन्नाचे साधन' },
-  { key: 'aadhaar_last4', icon: ShieldCheck, labelTa: 'ஆதார் கடைசி 4 எண்கள்', labelHi: 'आधार अंतिम 4 अंक', labelMr: 'आधार शेवटचे 4 अंक', isAadhaar: true },
+  { key: 'applicant_name', icon: User, labelTa: 'விண்ணப்பதாரர் பெயர்', labelHi: 'आवेदक का नाम', labelMr: 'अर्जदाराचे नाव', labelEn: 'Applicant Name' },
+  { key: 'village_or_address', icon: MapPin, labelTa: 'ஊர் / முகவரி', labelHi: 'गाँव / पता', labelMr: 'गाव / पत्ता', labelEn: 'City / Address' },
+  { key: 'loan_amount', icon: IndianRupee, labelTa: 'கடன் தொகை', labelHi: 'लोन राशि', labelMr: 'कर्ज रक्कम', labelEn: 'Loan Amount', isCurrency: true },
+  { key: 'loan_purpose', icon: Briefcase, labelTa: 'கடன் நோக்கம்', labelHi: 'लोन का उद्देश्य', labelMr: 'कर्जाचे कारण', labelEn: 'Loan Purpose' },
+  { key: 'monthly_income', icon: TrendingUp, labelTa: 'மாத வருமானம்', labelHi: 'मासिक कमाई', labelMr: 'मासिक उत्पन्न', labelEn: 'Monthly Income', isCurrency: true },
+  { key: 'income_source', icon: Coins, labelTa: 'வருமான ஆதாரம்', labelHi: 'कमाई का साधन', labelMr: 'उत्पन्नाचे साधन', labelEn: 'Source of Income' },
+  { key: 'aadhaar_last4', icon: ShieldCheck, labelTa: 'ஆதார் கடைசி 4 எண்கள்', labelHi: 'आधार अंतिम 4 अंक', labelMr: 'आधार शेवटचे 4 अंक', labelEn: 'Aadhaar Last 4 Digits', isAadhaar: true },
 ];
 
 export default function ApplicationSummary({
@@ -35,9 +35,12 @@ export default function ApplicationSummary({
 }) {
   const isTamil = language === 'ta-IN';
   const isHindi = language === 'hi-IN';
+  const isEnglish = language === 'en-IN';
 
   // Construct complete spoken summary
-  const summaryText = isTamil
+  const summaryText = isEnglish
+    ? `Your loan application is ready. Name: ${formData.applicant_name || 'Not provided'}, Address: ${formData.village_or_address || 'Not provided'}, Loan Amount: ${formData.loan_amount ? formData.loan_amount + ' rupees' : 'Not provided'}, Purpose: ${formData.loan_purpose || 'Not provided'}, Monthly Income: ${formData.monthly_income ? formData.monthly_income + ' rupees' : 'Not provided'}. Shall I submit this application to the bank?`
+    : isTamil
     ? `உங்கள் கடன் விண்ணப்பம் தயாராக உள்ளது. பெயர்: ${formData.applicant_name || 'குறிப்பிடப்படவில்லை'}, ஊர்: ${formData.village_or_address || 'குறிப்பிடப்படவில்லை'}, கடன் தொகை: ${formData.loan_amount ? formData.loan_amount + ' ரூபாய்' : 'குறிப்பிடப்படவில்லை'}, நோக்கம்: ${formData.loan_purpose || 'குறிப்பிடப்படவில்லை'}, மாத வருமானம்: ${formData.monthly_income ? formData.monthly_income + ' ரூபாய்' : 'குறிப்பிடப்படவில்லை'}. இதை வங்கியில் சமர்ப்பிக்கலாமா?`
     : isHindi
     ? `आपका आवेदन तैयार है। नाम: ${formData.applicant_name || 'अज्ञात'}, गाँव: ${formData.village_or_address || 'अज्ञात'}, लोन राशि: ${formData.loan_amount ? formData.loan_amount + ' रुपये' : 'अज्ञात'}, उद्देश्य: ${formData.loan_purpose || 'अज्ञात'}, मासिक कमाई: ${formData.monthly_income ? formData.monthly_income + ' रुपये' : 'अज्ञात'}। क्या मैं इसे जमा कर दूँ?`
@@ -55,11 +58,13 @@ export default function ApplicationSummary({
         <div className="flex items-center gap-2 justify-center mb-1">
           <FileText className="w-6 h-6 text-emerald-400" />
           <h2 className="text-xl font-bold text-white">
-            {isTamil ? "விண்ணப்ப சுருக்கம்" : isHindi ? "आवेदन सारांश" : "अर्ज सारांश"}
+            {isEnglish ? "Application Summary" : isTamil ? "விண்ணப்ப சுருக்கம்" : isHindi ? "आवेदन सारांश" : "अर्ज सारांश"}
           </h2>
         </div>
         <p className="text-xs text-slate-300 text-center">
-          {isTamil
+          {isEnglish
+            ? "Please review all your details and submit to bank"
+            : isTamil
             ? "தயவுசெய்து உங்கள் விவரங்களை சரிபார்த்து சமர்ப்பிக்கவும்"
             : isHindi
             ? "कृपया अपने सभी विवरण जांच लें और जमा करें"
@@ -74,7 +79,9 @@ export default function ApplicationSummary({
         >
           <Volume2 className="w-5 h-5 text-amber-400" />
           <span>
-            {isTamil
+            {isEnglish
+              ? "Listen to Full Application"
+              : isTamil
               ? "முழு விண்ணப்பத்தையும் கேட்க"
               : isHindi
               ? "पूरा आवेदन बोलकर सुनें"
@@ -88,7 +95,7 @@ export default function ApplicationSummary({
         {FIELD_CONFIG.map((field) => {
           const Icon = field.icon;
           const val = formData[field.key];
-          let displayVal = val || (isTamil ? "இல்லை" : isHindi ? "अनुपलब्ध" : "उपलब्ध नाही");
+          let displayVal = val || (isEnglish ? "Not provided" : isTamil ? "இல்லை" : isHindi ? "अनुपलब्ध" : "उपलब्ध नाही");
           if (field.isCurrency && val) {
             displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
           } else if (field.isAadhaar && val) {
@@ -103,7 +110,7 @@ export default function ApplicationSummary({
                 </div>
                 <div>
                   <div className="text-xs text-slate-400">
-                    {isTamil ? field.labelTa : isHindi ? field.labelHi : field.labelMr}
+                    {isEnglish ? field.labelEn : isTamil ? field.labelTa : isHindi ? field.labelHi : field.labelMr}
                   </div>
                   <div className="text-base font-bold text-white">
                     {displayVal}
@@ -114,7 +121,7 @@ export default function ApplicationSummary({
                 type="button"
                 className="btn-edit-small"
                 onClick={() => onEditField && onEditField(field.key)}
-                title="Edit"
+                title={isEnglish ? "Edit" : "Edit"}
               >
                 <RotateCcw className="w-4 h-4 text-slate-400" />
               </button>
@@ -135,7 +142,9 @@ export default function ApplicationSummary({
             <span className="flex items-center justify-center gap-2">
               <div className="spinner-small" />
               <span>
-                {isTamil
+                {isEnglish
+                  ? "Submitting Application..."
+                  : isTamil
                   ? "சமர்ப்பிக்கப்படுகிறது..."
                   : isHindi
                   ? "जमा किया जा रहा है..."
@@ -146,7 +155,9 @@ export default function ApplicationSummary({
             <span className="flex items-center justify-center gap-3">
               <CheckCircle2 className="w-7 h-7 text-white" />
               <span className="text-lg font-bold">
-                {isTamil
+                {isEnglish
+                  ? "Submit Loan Application"
+                  : isTamil
                   ? "கடன் விண்ணப்பத்தை சமர்ப்பிக்கவும்"
                   : isHindi
                   ? "आवेदन जमा करें"
@@ -157,7 +168,9 @@ export default function ApplicationSummary({
         </button>
 
         <p className="disclaimer-text">
-          {isTamil
+          {isEnglish
+            ? "This is a secure bank loan application. Verification is performed prior to disbursal."
+            : isTamil
             ? "இது ஒரு பாதுகாப்பான விண்ணப்பம். கடன் தொகை வழங்குவதற்கு முன் முறையான சரிபார்ப்பு செய்யப்படும்."
             : isHindi
             ? "यह एक सुरक्षित बैंक आवेदन है। किसी भी भुगतान से पहले वास्तविक सत्यापन किया जाएगा।"

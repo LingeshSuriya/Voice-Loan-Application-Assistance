@@ -55,6 +55,15 @@ const FIELD_META = {
     monthly_income: { label: 'मासिक उत्पन्न', spoken: 'मासिक उत्पन्न' },
     income_source: { label: 'उत्पन्नाचे साधन', spoken: 'उत्पन्नाचे साधन' },
     aadhaar_last4: { label: 'आधार शेवटचे 4 अंक', spoken: 'आधार क्रमांक' },
+  },
+  'en-IN': {
+    applicant_name: { label: 'Applicant Name', spoken: 'name' },
+    village_or_address: { label: 'City / Address', spoken: 'city or address' },
+    loan_amount: { label: 'Loan Amount', spoken: 'loan amount' },
+    loan_purpose: { label: 'Loan Purpose', spoken: 'loan purpose' },
+    monthly_income: { label: 'Monthly Income', spoken: 'monthly income' },
+    income_source: { label: 'Source of Income', spoken: 'income source' },
+    aadhaar_last4: { label: 'Aadhaar Last 4 Digits', spoken: 'Aadhaar digits' },
   }
 };
 
@@ -83,6 +92,7 @@ export default function FieldConfirmCard({
 
   const isTamil = language === 'ta-IN';
   const isHindi = language === 'hi-IN';
+  const isEnglish = language === 'en-IN';
   const langMeta = FIELD_META[language] || FIELD_META['hi-IN'];
   const fieldMeta = langMeta[fieldKey] || { label: fieldKey, spoken: fieldKey };
   const fieldLabel = fieldMeta.label;
@@ -97,12 +107,16 @@ export default function FieldConfirmCard({
     : value;
 
   const confirmQuestion = isMissing
-    ? (isTamil
+    ? (isEnglish
+        ? `Please speak and tell me your ${spokenField}.`
+        : isTamil
         ? `தயவுசெய்து சொல்லுங்கள், உங்கள் ${spokenField} என்ன?`
         : isHindi
         ? `कृपया बोलकर बताएं, आपका ${spokenField} क्या है?`
         : `कृपया सांगा, तुमचे ${spokenField} काय आहे?`)
-    : (isTamil
+    : (isEnglish
+        ? `You stated your ${spokenField} is "${formattedValue}", is that correct?`
+        : isTamil
         ? `உங்கள் ${spokenField} "${formattedValue}" என்று சொன்னீர்கள், இது சரியா?`
         : isHindi
         ? `आपने कहा आपका ${spokenField} "${formattedValue}" है, क्या यह सही है?`
@@ -120,7 +134,9 @@ export default function FieldConfirmCard({
       {/* Step Header */}
       <div className="field-step-header">
         <span className="step-tag">
-          {isTamil
+          {isEnglish
+            ? `Field ${fieldIndex + 1} / ${totalFields}`
+            : isTamil
             ? `படி ${fieldIndex + 1} / ${totalFields}`
             : isHindi
             ? `फ़ील्ड ${fieldIndex + 1} / ${totalFields}`
@@ -148,7 +164,9 @@ export default function FieldConfirmCard({
           <div className="missing-value-badge">
             <AlertCircle className="w-6 h-6 text-amber-400" />
             <span>
-              {isTamil
+              {isEnglish
+                ? "This detail has not been provided yet"
+                : isTamil
                 ? "இந்த விவரம் இன்னும் கிடைக்கவில்லை"
                 : isHindi
                 ? "यह जानकारी अभी नहीं मिली"
@@ -189,7 +207,13 @@ export default function FieldConfirmCard({
       {isRecordingCorrection && (
         <div className="correction-wave-box my-3">
           <p className="text-xs font-semibold text-rose-400 mb-1 animate-pulse text-center">
-            {isTamil ? "சரியான தகவலை சொல்லுங்கள்..." : (isHindi ? "सही जानकारी बोलिए..." : "योग्य माहिती बोला...")}
+            {isEnglish
+              ? "Please speak the correct details..."
+              : isTamil
+              ? "சரியான தகவலை சொல்லுங்கள்..."
+              : isHindi
+              ? "सही जानकारी बोलिए..."
+              : "योग्य माहिती बोला..."}
           </p>
           <AudioWaveform isRecording={true} isSpeaking={false} audioData={audioData} />
         </div>
@@ -207,8 +231,8 @@ export default function FieldConfirmCard({
             <Mic className="w-8 h-8" />
             <span className="text-lg font-bold">
               {isRecordingCorrection
-                ? (isTamil ? "பேசி முடிந்தது" : (isHindi ? "बोलना समाप्त करें" : "बोलणे पूर्ण करा"))
-                : (isTamil ? "குரல் மூலம் கூறவும்" : (isHindi ? "बोलकर बताएं" : "बोलून सांगा"))}
+                ? (isEnglish ? "Done Speaking" : isTamil ? "பேசி முடிந்தது" : isHindi ? "बोलना समाप्त करें" : "बोलणे पूर्ण करा")
+                : (isEnglish ? "Tap to Speak & Fill" : isTamil ? "குரல் மூலம் கூறவும்" : isHindi ? "बोलकर बताएं" : "बोलून सांगा")}
             </span>
           </button>
         ) : (
@@ -224,7 +248,7 @@ export default function FieldConfirmCard({
                 <Check className="w-10 h-10 text-white stroke-[3]" />
               </div>
               <span className="choice-label">
-                {isTamil ? "ஆம், சரி" : (isHindi ? "हाँ, सही है" : "होय, बरोबर आहे")}
+                {isEnglish ? "Yes, Correct" : isTamil ? "ஆம், சரி" : isHindi ? "हाँ, सही है" : "होय, बरोबर आहे"}
               </span>
             </button>
 
@@ -242,8 +266,8 @@ export default function FieldConfirmCard({
               </div>
               <span className="choice-label">
                 {isRecordingCorrection
-                  ? (isTamil ? "பேசி முடிந்தது" : (isHindi ? "बोलना रोकें" : "थांबवा"))
-                  : (isTamil ? "இல்லை, மாற்று" : (isHindi ? "नहीं, गलत है" : "नाही, चूक आहे"))}
+                  ? (isEnglish ? "Stop Speaking" : isTamil ? "பேசி முடிந்தது" : isHindi ? "बोलना रोकें" : "थांबवा")
+                  : (isEnglish ? "No, Change" : isTamil ? "இல்லை, மாற்று" : isHindi ? "नहीं, गलत है" : "नाही, चूक आहे")}
               </span>
             </button>
           </>
@@ -258,7 +282,13 @@ export default function FieldConfirmCard({
             className="text-xs text-slate-500 hover:text-slate-300 underline"
             onClick={() => setIsEditingManually(true)}
           >
-            {isTamil ? "விசைப்பலகை மூலம் மாற்றவும் (விருப்பம்)" : (isHindi ? "कीबोर्ड से सुधारें (वैकल्पिक)" : "कीबोर्डने दुरुस्त करा (पर्यायी)")}
+            {isEnglish
+              ? "Edit using keyboard (optional)"
+              : isTamil
+              ? "விசைப்பலகை மூலம் மாற்றவும் (விருப்பம்)"
+              : isHindi
+              ? "कीबोर्ड से सुधारें (वैकल्पिक)"
+              : "कीबोर्डने दुरुस्त करा (पर्यायी)"}
           </button>
         ) : (
           <div className="manual-edit-container flex gap-2 justify-center mt-2">
@@ -278,7 +308,7 @@ export default function FieldConfirmCard({
                 setIsEditingManually(false);
               }}
             >
-              {isTamil ? "சேமிக்க" : (isHindi ? "सहेजें" : "जतन करा")}
+              {isEnglish ? "Save" : isTamil ? "சேமிக்க" : isHindi ? "सहेजें" : "जतन करा"}
             </button>
           </div>
         )}

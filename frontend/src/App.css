@@ -1,13 +1,11 @@
-/* App Layout Shell */
+/* App Layout Shell - Modern Wide Web Experience */
 .app-shell {
-  width: 100vw;
-  max-width: 480px;
+  width: 100%;
   min-height: 100vh;
-  background: radial-gradient(circle at top, #1e293b 0%, #090d16 100%);
+  background: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 70%);
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
 }
 
 /* Demo Preset Top Bar */
@@ -74,42 +72,94 @@
 
 /* Header */
 .app-header {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.app-header-inner {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 14px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 18px;
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .brand-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .brand-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: #fff;
   line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 
 .brand-subtitle {
-  font-size: 11px;
+  font-size: 11.5px;
   color: #94a3b8;
   font-weight: 500;
+}
+
+.header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nav-lang-bar {
+  display: flex;
+  align-items: center;
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.nav-lang-chip {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  background: transparent;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.nav-lang-chip:hover {
+  color: #fff;
+}
+
+.nav-lang-chip.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
 }
 
 .btn-header-reset {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   background: #1e293b;
   color: #94a3b8;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .btn-header-reset:hover {
@@ -179,13 +229,15 @@
   color: #a7f3d0;
 }
 
-/* Main Content Area */
+/* Main Content Area - Wide Web Container */
 .main-content {
   flex: 1;
-  padding: 16px;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
 .step-wrapper {
@@ -739,9 +791,17 @@
 
 /* Footer */
 .app-footer {
-  padding: 10px;
+  width: 100%;
   background: #090d16;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: auto;
+}
+
+.app-footer-inner {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 24px;
 }
 
 .pulse-border {
@@ -1095,4 +1155,439 @@
   color: #64748b;
   margin-top: 2px;
   text-align: center;
+}
+
+/* ==========================================================================
+   WIDE DESKTOP / MODERN WEB RESPONSIVE LAYOUT SYSTEM
+   ========================================================================== */
+
+/* Step 1: Consent Hero Grid */
+.consent-desktop-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr;
+  gap: 36px;
+  align-items: stretch;
+  margin: auto 0;
+  width: 100%;
+}
+
+.hero-welcome-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 28px;
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(59, 130, 246, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fbbf24;
+  width: fit-content;
+}
+
+.hero-headline {
+  font-size: 34px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.hero-subtext {
+  font-size: 15.5px;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.hero-features-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.hero-feat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #090e1a;
+  border: 1px solid #1e293b;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.hero-lang-selector-wrapper {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.consent-card-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.consent-card-column .consent-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 32px;
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(19, 27, 46, 0.9) 0%, rgba(9, 13, 22, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.7);
+}
+
+/* Step 2: Voice Intake Studio Container */
+.record-desktop-container {
+  max-width: 860px;
+  width: 100%;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.record-header-strip {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid #1e293b;
+  border-radius: 24px;
+  padding: 24px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.record-step-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.record-step-pill {
+  display: inline-block;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.record-prompt-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.record-fields-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.expected-field-chip {
+  background: #090d16;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.record-desktop-container .mic-recorder-card {
+  width: 100%;
+  padding: 40px 32px;
+  border-radius: 28px;
+  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.8);
+}
+
+/* Step 3: Processing Screen */
+.processing-desktop-container {
+  max-width: 600px;
+  width: 100%;
+  margin: auto;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.processing-hero {
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 28px;
+  padding: 48px 32px;
+  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.8);
+}
+
+/* Step 4: Interactive Confirmation Loop Grid */
+.confirm-desktop-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 32px;
+  align-items: start;
+  width: 100%;
+}
+
+.progress-checklist-sidebar {
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 24px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 90px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.checklist-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.checklist-badge {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.checklist-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #1e293b;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.checklist-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 999px;
+}
+
+.checklist-items-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #090d16;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.checklist-item.completed {
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.05);
+  cursor: pointer;
+}
+
+.checklist-item.completed:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.1);
+  transform: translateX(2px);
+}
+
+.checklist-item.active {
+  border-color: #3b82f6;
+  background: rgba(37, 99, 235, 0.14);
+  box-shadow: 0 0 14px rgba(37, 99, 235, 0.25);
+}
+
+.checklist-item.pending {
+  opacity: 0.6;
+}
+
+.checklist-status-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checklist-item.completed .checklist-status-icon {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.checklist-item.active .checklist-status-icon {
+  background: rgba(37, 99, 235, 0.3);
+  border: 1px solid #3b82f6;
+}
+
+.active-pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: pulse 1.5s infinite;
+}
+
+.pending-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.checklist-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.checklist-field-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checklist-field-val {
+  font-size: 11.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checklist-item.active .checklist-field-val {
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.confirm-main-card {
+  min-width: 0;
+}
+
+.confirm-main-card .field-confirm-card {
+  padding: 36px 32px;
+  border-radius: 28px;
+  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.8);
+}
+
+/* Step 5: Application Summary Desktop Container */
+.summary-desktop-container {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.summary-desktop-container .summary-container {
+  padding: 36px 36px;
+  border-radius: 28px;
+  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.8);
+}
+
+.summary-desktop-container .summary-fields-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-height: none;
+  overflow-y: visible;
+}
+
+.summary-desktop-container .summary-field-row {
+  padding: 14px 18px;
+}
+
+/* Step 6: Receipt Screen */
+.receipt-desktop-container {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.receipt-desktop-container .receipt-card {
+  padding: 40px 36px;
+  border-radius: 28px;
+  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.8);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 960px) {
+  .consent-desktop-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .confirm-desktop-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .progress-checklist-sidebar {
+    position: static;
+  }
+
+  .summary-desktop-container .summary-fields-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header-inner {
+    padding: 12px 16px;
+  }
+
+  .main-content {
+    padding: 16px 14px 36px;
+  }
+
+  .hero-welcome-card {
+    padding: 24px 18px;
+  }
+
+  .hero-headline {
+    font-size: 26px;
+  }
+
+  .confirm-main-card .field-confirm-card {
+    padding: 24px 16px;
+  }
+
+  .summary-desktop-container .summary-container {
+    padding: 24px 16px;
+  }
 }

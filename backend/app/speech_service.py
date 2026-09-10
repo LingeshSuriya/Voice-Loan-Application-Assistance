@@ -61,6 +61,7 @@ class SpeechService:
             "ta-IN": "kavitha",
             "hi-IN": "priya",
             "mr-IN": "rupali",
+            "en-IN": "priya",
         }
         speaker = speaker_map.get(language_code, "priya")
 

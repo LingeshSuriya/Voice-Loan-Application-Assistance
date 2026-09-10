@@ -3,9 +3,10 @@ import { Languages, Volume2 } from 'lucide-react';
 
 export default function LanguageSelect({ currentLang, onSelectLang, onPlayPrompt }) {
   const languages = [
-    { code: 'ta-IN', label: 'தமிழ் (Tamil)', sub: 'குரல் மூலம் கடன் விண்ணப்பம்' },
-    { code: 'hi-IN', label: 'हिंदी (Hindi)', sub: 'बोलकर लोन भरें' },
-    { code: 'mr-IN', label: 'मराठी (Marathi)', sub: 'बोलून कर्ज अर्ज भरा' },
+    { code: 'ta-IN', label: 'தமிழ்', sub: 'குரல் மூலம் கடன் விண்ணப்பம்' },
+    { code: 'hi-IN', label: 'हिंदी', sub: 'बोलकर लोन भरें' },
+    { code: 'mr-IN', label: 'मराठी', sub: 'बोलून कर्ज अर्ज भरा' },
+    { code: 'en-IN', label: 'English', sub: 'Voice Loan Application' },
   ];
 
   return (

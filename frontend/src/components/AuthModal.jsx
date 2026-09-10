@@ -37,6 +37,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
   const isTamil = language === 'ta-IN';
   const isHindi = language === 'hi-IN';
+  const isEnglish = language === 'en-IN';
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -47,7 +48,9 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
     if (cleanPhone.length < 10) {
       setErrorMsg(
-        isTamil
+        isEnglish
+          ? 'Please enter a valid 10-digit mobile number'
+          : isTamil
           ? '10 இலக்க மொபைல் எண்ணை உள்ளிடவும்'
           : isHindi
           ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें'
@@ -58,7 +61,9 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
     if (cleanPin.length !== 4) {
       setErrorMsg(
-        isTamil
+        isEnglish
+          ? 'Please enter your 4-digit security PIN'
+          : isTamil
           ? '4 இலக்க பாதுகாப்பு பின்னை உள்ளிடவும்'
           : isHindi
           ? 'कृपया 4 अंकों का सुरक्षा पिन दर्ज करें'
@@ -76,7 +81,9 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
         role: res.role,
       });
 
-      const welcomeText = isTamil
+      const welcomeText = isEnglish
+        ? `Welcome ${res.full_name || ''}! Login successful.`
+        : isTamil
         ? `வணக்கம் ${res.full_name || ''}! உள்நுழைவு வெற்றிகரமாக முடிந்தது.`
         : isHindi
         ? `नमस्ते ${res.full_name || ''}! लॉगिन सफल हुआ।`
@@ -85,7 +92,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
       onClose();
     } catch (err) {
-      setErrorMsg(err.message || (isTamil ? 'உள்நுழைவு தோல்வியடைந்தது' : 'लॉगिन विफल हुआ'));
+      setErrorMsg(err.message || (isEnglish ? 'Login failed' : isTamil ? 'உள்நுழைவு தோல்வியடைந்தது' : 'लॉगिन विफल हुआ'));
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +108,9 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
     if (!cleanName) {
       setErrorMsg(
-        isTamil
+        isEnglish
+          ? 'Please enter your full name'
+          : isTamil
           ? 'உங்கள் முழு பெயரை உள்ளிடவும்'
           : isHindi
           ? 'कृपया अपना पूरा नाम दर्ज करें'
@@ -112,7 +121,9 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
     if (cleanPhone.length < 10) {
       setErrorMsg(
-        isTamil
+        isEnglish
+          ? 'Please enter a valid 10-digit mobile number'
+          : isTamil
           ? '10 இலக்க மொபைல் எண்ணை உள்ளிடவும்'
           : isHindi
           ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें'
@@ -123,7 +134,9 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
     if (cleanPin.length !== 4) {
       setErrorMsg(
-        isTamil
+        isEnglish
+          ? 'Please set a 4-digit security PIN'
+          : isTamil
           ? '4 இலக்க பாதுகாப்பு பின்னை அமைக்கவும்'
           : isHindi
           ? 'कृपया 4 अंकों का पिन बनाएं'
@@ -147,7 +160,9 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
         role: res.role,
       });
 
-      const welcomeText = isTamil
+      const welcomeText = isEnglish
+        ? `Registration successful! Welcome ${res.full_name || ''}.`
+        : isTamil
         ? `பதிவு வெற்றிகரமாக முடிந்தது! வரவேற்கிறோம் ${res.full_name || ''}.`
         : isHindi
         ? `पंजीकरण सफल हुआ! स्वागत है ${res.full_name || ''}।`
@@ -156,7 +171,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
       onClose();
     } catch (err) {
-      setErrorMsg(err.message || (isTamil ? 'பதிவு தோல்வியடைந்தது' : 'पंजीकरण विफल हुआ'));
+      setErrorMsg(err.message || (isEnglish ? 'Registration failed' : isTamil ? 'பதிவு தோல்வியடைந்தது' : 'पंजीकरण विफल हुआ'));
     } finally {
       setIsLoading(false);
     }
@@ -181,12 +196,14 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
             <ShieldCheck className="w-7 h-7 text-white stroke-[2.5]" />
           </div>
           <h2 className="auth-title">
-            {isTamil ? 'பாதுகாப்பான உள்நுழைவு' : isHindi ? 'सुरक्षित प्रमाणीकरण' : 'सुरक्षित लॉगिन'}
+            {isEnglish ? 'Secure Sign In' : isTamil ? 'பாதுகாப்பான உள்நுழைவு' : isHindi ? 'सुरक्षित प्रमाणीकरण' : 'सुरक्षित लॉगिन'}
           </h2>
           <div className="auth-badge-sub">
             <span className="auth-badge-dot" />
             <span>
-              {isTamil
+              {isEnglish
+                ? '100% Secure Bank Service'
+                : isTamil
                 ? '100% பாதுகாப்பானது'
                 : isHindi
                 ? '100% सुरक्षित बैंक सेवा'
@@ -206,7 +223,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
             }}
           >
             <LogIn className="w-4 h-4" />
-            <span>{isTamil ? 'உள்நுழை (Login)' : isHindi ? 'लॉगिन' : 'लॉगिन'}</span>
+            <span>{isEnglish ? 'Sign In' : isTamil ? 'உள்நுழை' : isHindi ? 'लॉगिन' : 'लॉगिन'}</span>
           </button>
           <button
             type="button"
@@ -217,7 +234,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
             }}
           >
             <UserPlus className="w-4 h-4" />
-            <span>{isTamil ? 'பதிவு செய் (Register)' : isHindi ? 'नया खाता' : 'नवीन नोंदणी'}</span>
+            <span>{isEnglish ? 'Register' : isTamil ? 'பதிவு செய்' : isHindi ? 'नया खाता' : 'नवीन नोंदणी'}</span>
           </button>
         </div>
 
@@ -234,7 +251,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
           <form onSubmit={handleLoginSubmit} className="auth-form-body">
             <div className="auth-field-group">
               <label className="auth-label">
-                {isTamil ? 'மொபைல் எண் (10 இலக்கங்கள்)' : isHindi ? 'मोबाइल नंबर (10 अंक)' : 'मोबाइल नंबर'}
+                {isEnglish ? 'Mobile Number (10 digits)' : isTamil ? 'மொபைல் எண் (10 இலக்கங்கள்)' : isHindi ? 'मोबाइल नंबर (10 अंक)' : 'मोबाइल नंबर'}
               </label>
               <div className="phone-input-wrapper">
                 <span className="phone-prefix">+91</span>
@@ -254,7 +271,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
             <div className="auth-field-group">
               <label className="auth-label">
-                {isTamil ? '4 இலக்க பாதுகாப்பு பின் (PIN)' : isHindi ? '4 अंकों का सुरक्षा पिन (PIN)' : '4 अंकी सुरक्षा पिन'}
+                {isEnglish ? '4-Digit Security PIN' : isTamil ? '4 இலக்க பாதுகாப்பு பின்' : isHindi ? '4 अंकों का सुरक्षा पिन' : '4 अंकी सुरक्षा पिन'}
               </label>
               <div className="pin-input-wrapper">
                 <KeyRound className="pin-input-icon" />
@@ -283,11 +300,15 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
               )}
               <span>
                 {isLoading
-                  ? isTamil
+                  ? isEnglish
+                    ? 'Signing in...'
+                    : isTamil
                     ? 'சரிபார்க்கிறது...'
                     : 'जांच रहे हैं...'
+                  : isEnglish
+                  ? 'Sign In'
                   : isTamil
-                  ? 'உள்நுழைக (Sign In)'
+                  ? 'உள்நுழைக'
                   : 'लॉगिन करें'}
               </span>
             </button>
@@ -299,7 +320,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
           <form onSubmit={handleRegisterSubmit} className="auth-form-body">
             <div className="auth-field-group">
               <label className="auth-label">
-                {isTamil ? 'முழு பெயர்' : isHindi ? 'पूरा नाम' : 'पूर्ण नाव'}
+                {isEnglish ? 'Full Name' : isTamil ? 'முழு பெயர்' : isHindi ? 'पूरा नाम' : 'पूर्ण नाव'}
               </label>
               <div className="text-input-wrapper">
                 <User className="pin-input-icon" />
@@ -308,7 +329,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
                   className="auth-text-input"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
-                  placeholder={isTamil ? 'உதா: விக்னேஷ்' : 'उदा: राम कुमार'}
+                  placeholder={isEnglish ? 'e.g. David Miller' : isTamil ? 'உதா: விக்னேஷ்' : 'उदा: राम कुमार'}
                   required
                 />
               </div>
@@ -316,7 +337,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
             <div className="auth-field-group">
               <label className="auth-label">
-                {isTamil ? 'மொபைல் எண் (10 இலக்கங்கள்)' : isHindi ? 'मोबाइल नंबर (10 अंक)' : 'मोबाइल नंबर'}
+                {isEnglish ? 'Mobile Number (10 digits)' : isTamil ? 'மொபைல் எண் (10 இலக்கங்கள்)' : isHindi ? 'मोबाइल नंबर (10 अंक)' : 'मोबाइल नंबर'}
               </label>
               <div className="phone-input-wrapper">
                 <span className="phone-prefix">+91</span>
@@ -335,7 +356,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
             <div className="auth-field-group">
               <label className="auth-label">
-                {isTamil ? 'புதிய 4 இலக்க பின் (PIN)' : isHindi ? 'नया 4 अंकों का पिन' : 'नवीन 4 अंकी पिन'}
+                {isEnglish ? 'Set 4-Digit Security PIN' : isTamil ? 'புதிய 4 இலக்க பின்' : isHindi ? 'नया 4 अंकों का पिन' : 'नवीन 4 अंकी पिन'}
               </label>
               <div className="pin-input-wrapper">
                 <KeyRound className="pin-input-icon" />
@@ -354,7 +375,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
 
             <div className="auth-field-group">
               <label className="auth-label">
-                {isTamil ? 'பயனர் வகை' : isHindi ? 'उपयोगकर्ता प्रकार' : 'वापरकर्ता प्रकार'}
+                {isEnglish ? 'Account Type' : isTamil ? 'பயனர் வகை' : isHindi ? 'उपयोगकर्ता प्रकार' : 'वापरकर्ता प्रकार'}
               </label>
               <div className="role-selector-grid">
                 <button
@@ -363,7 +384,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
                   onClick={() => setRegRole('borrower')}
                 >
                   <span className="role-pill-dot" />
-                  <span>{isTamil ? 'வாடிக்கையாளர்' : 'ग्राहक (Borrower)'}</span>
+                  <span>{isEnglish ? 'Borrower' : isTamil ? 'வாடிக்கையாளர்' : 'ग्राहक'}</span>
                 </button>
                 <button
                   type="button"
@@ -371,7 +392,7 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
                   onClick={() => setRegRole('agent')}
                 >
                   <span className="role-pill-dot" />
-                  <span>{isTamil ? 'கள முகவர்' : 'एजेंट (Agent)'}</span>
+                  <span>{isEnglish ? 'Field Agent' : isTamil ? 'கள முகவர்' : 'एजेंट'}</span>
                 </button>
               </div>
             </div>
@@ -388,9 +409,13 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
               )}
               <span>
                 {isLoading
-                  ? isTamil
+                  ? isEnglish
+                    ? 'Creating Account...'
+                    : isTamil
                     ? 'பதிவாகிறது...'
                     : 'पंजीकरण हो रहा है...'
+                  : isEnglish
+                  ? 'Create Account'
                   : isTamil
                   ? 'புதிய கணக்கை உருவாக்கு'
                   : 'खाता बनाएं'}
@@ -403,7 +428,9 @@ export default function AuthModal({ isOpen, onClose, language = 'hi-IN' }) {
         <div className="auth-security-footer">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span>
-            {isTamil
+            {isEnglish
+              ? 'All personal details are encrypted and kept strictly confidential.'
+              : isTamil
               ? 'உங்கள் தகவல்கள் அனைத்தும் முழு பாதுகாப்போடு வைக்கப்படும்'
               : isHindi
               ? 'आपकी सभी जानकारी पूरी तरह से सुरक्षित है'

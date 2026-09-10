@@ -96,6 +96,30 @@ DEMO_PROFILES = {
             "income_source": "'மளிகை கடை' என்பதை வருமான ஆதாரமாக புரிந்து கொண்டேன்",
             "aadhaar_last4": "'5544' என்பதை ஆதார் கடைசி 4 எண்களாக புரிந்து கொண்டேன்"
         }
+    },
+    "david_english": {
+        "id": "david_english",
+        "title": "David Miller (Retail Business - ₹75,000)",
+        "language": "en-IN",
+        "transcript": "Hello, my name is David Miller, I live in Chennai. I need a loan of 75000 rupees for my retail store business. My monthly income is 25000 rupees and my Aadhaar last four digits are 1234.",
+        "data": {
+            "applicant_name": "David Miller",
+            "village_or_address": "Chennai",
+            "loan_amount": 75000.0,
+            "loan_purpose": "Retail store (business)",
+            "monthly_income": 25000.0,
+            "income_source": "Retail store (small shop)",
+            "aadhaar_last4": "1234"
+        },
+        "explanations": {
+            "applicant_name": "Understood 'David Miller' as applicant name",
+            "village_or_address": "Understood 'Chennai' as address",
+            "loan_amount": "Understood '75,000' as loan amount",
+            "loan_purpose": "Understood 'Retail store' as loan purpose",
+            "monthly_income": "Understood '25,000' as monthly income",
+            "income_source": "Understood 'Retail store' as income source",
+            "aadhaar_last4": "Understood '1234' as Aadhaar last 4 digits"
+        }
     }
 }
 
@@ -177,7 +201,33 @@ VOICE_PROMPTS = {
         },
         "field_correction_prompt": "தயவுசெய்து சரியான {field_label} சொல்லுங்கள்.",
         "summary_intro": "உங்கள் விண்ணப்பம் தயாராக உள்ளது. இறுதி விவரங்களை கேளுங்கள்: ",
-        "receipt": "வாழ்த்துகள்! உங்கள் கடன் விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. குறிப்பு எண் {ref_no}. நிலை: சரிபார்ப்பில் உள்ளது (Pending Verification)."
+        "receipt": "வாழ்த்துகள்! உங்கள் கடன் விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. குறிப்பு எண் {ref_no}. நிலை: சரிபார்ப்பில் உள்ளது."
+    },
+    "en-IN": {
+        "consent": "Hello! I will assist you in filling out your loan application using your voice. May I record your voice to begin?",
+        "start_recording": "Please speak now: your name, address or city, loan amount needed, and the purpose of the loan.",
+        "processing": "Please wait, I am processing the details you spoke...",
+        "field_confirm": {
+            "applicant_name": "You stated your name is {value}, is that correct?",
+            "village_or_address": "You stated your address is {value}, is that correct?",
+            "loan_amount": "You requested a loan amount of {value} rupees, is that correct?",
+            "loan_purpose": "You stated the loan purpose is {value}, is that correct?",
+            "monthly_income": "You stated your monthly income is {value} rupees, is that correct?",
+            "income_source": "You stated your income source is {value}, is that correct?",
+            "aadhaar_last4": "You stated your Aadhaar last four digits are {value}, is that correct?"
+        },
+        "field_missing_prompt": {
+            "applicant_name": "Please state your full name clearly.",
+            "village_or_address": "Please state your city, village, or address.",
+            "loan_amount": "How much loan amount do you require in rupees?",
+            "loan_purpose": "What is the purpose of this loan?",
+            "monthly_income": "Approximately how much is your monthly income?",
+            "income_source": "What is your primary source of income, such as farming or business?",
+            "aadhaar_last4": "Please state the last four digits of your Aadhaar card."
+        },
+        "field_correction_prompt": "Please state the correct {field_label}.",
+        "summary_intro": "Your application is complete. Please listen to your final details: ",
+        "receipt": "Congratulations! Your loan application has been submitted successfully. Your reference number is {ref_no}. Status: Pending Verification."
     }
 }
 
@@ -208,5 +258,14 @@ FIELD_LABELS = {
         "monthly_income": "மாத வருமானம்",
         "income_source": "வருமான ஆதாரம்",
         "aadhaar_last4": "ஆதார் கடைசி 4 எண்கள்"
+    },
+    "en-IN": {
+        "applicant_name": "Applicant Name",
+        "village_or_address": "City / Address",
+        "loan_amount": "Loan Amount",
+        "loan_purpose": "Loan Purpose",
+        "monthly_income": "Monthly Income",
+        "income_source": "Source of Income",
+        "aadhaar_last4": "Aadhaar Last 4 Digits"
     }
 }

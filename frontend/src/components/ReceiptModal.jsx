@@ -20,6 +20,7 @@ export default function ReceiptModal({
 }) {
   const isTamil = language === 'ta-IN';
   const isHindi = language === 'hi-IN';
+  const isEnglish = language === 'en-IN';
   const isOffline = receiptData?.is_offline || receiptData?.status === 'saved_offline';
 
   useEffect(() => {
@@ -42,12 +43,16 @@ export default function ReceiptModal({
 
       <h2 className="receipt-title">
         {isOffline
-          ? (isTamil
+          ? (isEnglish
+              ? "Application Saved Offline Securely!"
+              : isTamil
               ? "விண்ணப்பம் ஆஃப்லைனில் பாதுகாக்கப்பட்டது!"
               : isHindi
               ? "आवेदन ऑफ़लाइन सुरक्षित सहेज लिया गया!"
               : "अर्ज ऑफलाइन सुरक्षित जतन झाला!")
-          : (isTamil
+          : (isEnglish
+              ? "Application Submitted Successfully!"
+              : isTamil
               ? "விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!"
               : isHindi
               ? "आवेदन सफलतापूर्वक जमा हुआ!"
@@ -57,7 +62,7 @@ export default function ReceiptModal({
       {/* Reference Number Badge */}
       <div className="ref-number-pill">
         <span className="text-xs uppercase text-slate-400">
-          {isTamil ? "குறிப்பு எண் / Reference No" : isHindi ? "संदर्भ संख्या / Reference No" : "संदर्भ क्रमांक"}
+          {isEnglish ? "Reference Number" : isTamil ? "குறிப்பு எண்" : isHindi ? "संदर्भ संख्या" : "संदर्भ क्रमांक"}
         </span>
         <div className="text-2xl font-black text-amber-300 tracking-wider">
           {receiptData.reference_no}
@@ -70,7 +75,9 @@ export default function ReceiptModal({
           <div className="status-pill offline flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-950/70 border border-amber-500/50 text-amber-300 text-xs font-bold">
             <WifiOff className="w-4 h-4 text-amber-400" />
             <span>
-              {isTamil
+              {isEnglish
+                ? "Offline Mode: Will automatically sync to bank server when connected"
+                : isTamil
                 ? "ஆஃப்லைன்: இணையம் வந்ததும் தானாகவே வங்கிக்கு அனுப்பப்படும்"
                 : isHindi
                 ? "ऑफ़लाइन: इंटरनेट आने पर बैंक में सिंक होगा"
@@ -81,11 +88,13 @@ export default function ReceiptModal({
           <div className="status-pill pending">
             <Clock className="w-5 h-5 text-amber-400" />
             <span className="font-bold">
-              {isTamil
-                ? "சரிபார்ப்பில் உள்ளது (Pending Verification)"
+              {isEnglish
+                ? "Pending Verification"
+                : isTamil
+                ? "சரிபார்ப்பில் உள்ளது"
                 : isHindi
-                ? "सत्यापन लंबित (Pending Verification)"
-                : "पडताळणी प्रलंबित (Pending Verification)"}
+                ? "सत्यापन लंबित"
+                : "पडताळणी प्रलंबित"}
             </span>
           </div>
         )}
@@ -122,7 +131,9 @@ export default function ReceiptModal({
         >
           <PlusCircle className="w-5 h-5" />
           <span>
-            {isTamil
+            {isEnglish
+              ? "Start New Application"
+              : isTamil
               ? "புதிய விண்ணப்பத்தை தொடங்க"
               : isHindi
               ? "नया आवेदन शुरू करें"

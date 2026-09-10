@@ -12,7 +12,9 @@ import {
   Info,
   Wifi,
   WifiOff,
-  CloudUpload
+  CloudUpload,
+  Check,
+  Languages
 } from 'lucide-react';
 import LanguageSelect from './components/LanguageSelect';
 import ConsentBanner from './components/ConsentBanner';
@@ -56,6 +58,45 @@ const FIELD_KEYS = [
   'income_source',
   'aadhaar_last4',
 ];
+
+const FIELD_SIDEBAR_LABELS = {
+  'ta-IN': {
+    applicant_name: 'பெயர்',
+    village_or_address: 'ஊர் / முகவரி',
+    loan_amount: 'கடன் தொகை',
+    loan_purpose: 'கடன் நோக்கம்',
+    monthly_income: 'மாத வருமானம்',
+    income_source: 'வருமான ஆதாரம்',
+    aadhaar_last4: 'ஆதார் எண்',
+  },
+  'hi-IN': {
+    applicant_name: 'आवेदक नाम',
+    village_or_address: 'गाँव / पता',
+    loan_amount: 'लोन राशि',
+    loan_purpose: 'लोन का उद्देश्य',
+    monthly_income: 'मासिक कमाई',
+    income_source: 'कमाई का साधन',
+    aadhaar_last4: 'आधार अंतिम 4',
+  },
+  'mr-IN': {
+    applicant_name: 'अर्जदाराचे नाव',
+    village_or_address: 'गाव / पत्ता',
+    loan_amount: 'कर्ज रक्कम',
+    loan_purpose: 'कर्जाचे कारण',
+    monthly_income: 'मासिक उत्पन्न',
+    income_source: 'उत्पन्नाचे साधन',
+    aadhaar_last4: 'आधार शेवटचे 4',
+  },
+  'en-IN': {
+    applicant_name: 'Applicant Name',
+    village_or_address: 'City / Address',
+    loan_amount: 'Loan Amount',
+    loan_purpose: 'Loan Purpose',
+    monthly_income: 'Monthly Income',
+    income_source: 'Source of Income',
+    aadhaar_last4: 'Aadhaar Last 4',
+  }
+};
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState(STEPS.CONSENT);
@@ -340,7 +381,9 @@ export default function App() {
       setPendingSyncCount(getOfflineApplications().length);
       const offlineRef = draft?.offline_ref || `OFFLINE-LN-${Math.floor(10000 + Math.random() * 90000)}`;
 
-      const offlineVoice = language === 'ta-IN'
+      const offlineVoice = language === 'en-IN'
+        ? `Your application has been safely saved offline on your device. Reference number is ${offlineRef}. It will sync automatically to the bank when online.`
+        : language === 'ta-IN'
         ? `விண்ணப்பம் உங்கள் சாதனத்தில் பாதுகாப்பாக சேமிக்கப்பட்டது. குறிப்பு எண் ${offlineRef}. இணையம் வந்ததும் தானாகவே வங்கிக்கு அனுப்பப்படும்.`
         : language === 'mr-IN'
         ? `अर्ज डिव्हाइसमध्ये सुरक्षित जतन झाला आहे. संदर्भ क्रमांक ${offlineRef}. इंटरनेट आल्यावर बँकेत सिंक होईल.`
@@ -350,7 +393,9 @@ export default function App() {
         reference_no: offlineRef,
         status: 'saved_offline',
         voice_receipt_text: offlineVoice,
-        disclaimer: language === 'ta-IN'
+        disclaimer: language === 'en-IN'
+          ? 'Offline mode: Device will securely sync to bank server once internet connectivity is restored.'
+          : language === 'ta-IN'
           ? 'ஆஃப்லைன் முறை: சாதனம் இணையத்துடன் இணையும் போது தானாகவே வங்கிக்கு பதிவேற்றப்படும்.'
           : 'ऑफ़लाइन मोड: डिवाइस इंटरनेट से जुड़ते ही बैंक सर्वर पर सुरक्षित सिंक हो जाएगा।',
         is_offline: true,
@@ -371,7 +416,9 @@ export default function App() {
       setPendingSyncCount(getOfflineApplications().length);
       const offlineRef = draft?.offline_ref || `OFFLINE-LN-${Math.floor(10000 + Math.random() * 90000)}`;
 
-      const offlineVoice = language === 'ta-IN'
+      const offlineVoice = language === 'en-IN'
+        ? `Your application has been saved on this device. It will automatically upload to the bank when internet is available.`
+        : language === 'ta-IN'
         ? `விண்ணப்பம் உங்கள் சாதனத்தில் பாதுகாப்பாக சேமிக்கப்பட்டது. இணைய இணைப்பு வந்தவுடன் வங்கிக்கு அனுப்பப்படும்.`
         : `आवेदन ऑफ़लाइन सुरक्षित सहेजा गया। इंटरनेट आते ही बैंक में सिंक हो जाएगा।`;
 
@@ -379,7 +426,9 @@ export default function App() {
         reference_no: offlineRef,
         status: 'saved_offline',
         voice_receipt_text: offlineVoice,
-        disclaimer: 'Saved locally in offline queue. Will sync automatically once online.',
+        disclaimer: language === 'en-IN'
+          ? 'Saved locally in offline queue. Will sync automatically once online.'
+          : 'Saved locally in offline queue. Will sync automatically once online.',
         is_offline: true,
       });
       setCurrentStep(STEPS.RECEIPT);
@@ -412,93 +461,119 @@ export default function App() {
   const currentFieldKey = FIELD_KEYS[currentFieldIndex];
   const isTamil = language === 'ta-IN';
   const isHindi = language === 'hi-IN';
+  const isEnglish = language === 'en-IN';
 
   return (
     <div className="app-shell">
-      {/* Main Rural-First Header */}
+      {/* Main Full-Width Header */}
       <header className="app-header">
-        <div className="brand-badge">
-          <Building2 className="w-6 h-6 text-blue-400" />
-          <div>
-            <h1 className="brand-title">
-              {isTamil ? "குரல் கடன் வழிகாட்டி" : isHindi ? "आवाज़ लोन साथी" : "आवाज कर्ज साथी"}
-            </h1>
-            <p className="brand-subtitle">Voice-Only Rural Loan Assistant</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Network Status Badge */}
-          <div className="network-status-badge">
-            {isOnline ? (
-              <div className="online-pill" title="Connected to bank server">
-                <span className="online-dot" />
-                <Wifi className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-semibold">{isTamil ? 'ஆன்லைன்' : isHindi ? 'ऑनलाइन' : 'ऑनलाइन'}</span>
-              </div>
-            ) : (
-              <div className="offline-pill" title="Working 100% locally on device">
-                <WifiOff className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-bold">{isTamil ? 'ஆஃப்லைன்' : isHindi ? 'ऑफ़लाइन' : 'ऑफलाइन'}</span>
-              </div>
-            )}
+        <div className="app-header-inner">
+          <div className="brand-badge">
+            <Building2 className="w-7 h-7 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="brand-title">
+                {isEnglish ? "Voice Loan Assistant" : isTamil ? "குரல் கடன் வழிகாட்டி" : isHindi ? "आवाज़ लोन साथी" : "आवाज कर्ज साथी"}
+              </h1>
+              <p className="brand-subtitle">Rural Voice-Assisted Finance Portal</p>
+            </div>
           </div>
 
-          {/* Pending Sync Button (Only visible if offline drafts exist) */}
-          {pendingSyncCount > 0 && (
-            <button
-              type="button"
-              className="btn-sync-pill"
-              onClick={handleAutoSync}
-              disabled={isSyncing || !isOnline}
-              title={isOnline ? "Sync pending offline applications" : "Connect to internet to sync"}
-            >
-              <CloudUpload className={`w-3.5 h-3.5 text-amber-400 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="text-[11px] font-bold text-amber-300">
-                {pendingSyncCount} {isTamil ? 'ஒத்திசை' : isHindi ? 'सिंक' : 'सिंक'}
-              </span>
-            </button>
-          )}
+          <div className="header-actions-group">
+            {/* Quick Language Switcher Bar in Header */}
+            <div className="nav-lang-bar">
+              {[
+                { code: 'ta-IN', label: 'தமிழ்' },
+                { code: 'hi-IN', label: 'हिंदी' },
+                { code: 'mr-IN', label: 'मराठी' },
+                { code: 'en-IN', label: 'English' },
+              ].map((item) => (
+                <button
+                  key={item.code}
+                  type="button"
+                  className={`nav-lang-chip ${language === item.code ? 'active' : ''}`}
+                  onClick={() => setLanguage(item.code)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
 
-          {isAuthenticated ? (
-            <div className="auth-user-pill">
-              <span className="dot-green" />
-              <span className="text-xs font-semibold text-slate-200">
-                +91 {user?.phone_number?.slice(-4)} ({user?.role === 'agent' ? (isTamil ? 'கள முகவர்' : 'एजेंट') : (isTamil ? 'வாடிக்கையாளர்' : 'ग्राहक')})
-              </span>
+            {/* Network Status Badge */}
+            <div className="network-status-badge">
+              {isOnline ? (
+                <div className="online-pill" title="Connected to bank server">
+                  <span className="online-dot" />
+                  <Wifi className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-semibold">
+                    {isEnglish ? 'Online' : isTamil ? 'ஆன்லைன்' : 'ऑनलाइन'}
+                  </span>
+                </div>
+              ) : (
+                <div className="offline-pill" title="Working 100% locally on device">
+                  <WifiOff className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-bold">
+                    {isEnglish ? 'Offline' : isTamil ? 'ஆஃப்லைன்' : 'ऑफलाइन'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Pending Sync Button (Only visible if offline drafts exist) */}
+            {pendingSyncCount > 0 && (
               <button
                 type="button"
-                className="text-xs text-rose-400 hover:text-rose-300 ml-1 font-bold"
-                onClick={logout}
-                title="Logout"
+                className="btn-sync-pill"
+                onClick={handleAutoSync}
+                disabled={isSyncing || !isOnline}
+                title={isOnline ? "Sync pending offline applications" : "Connect to internet to sync"}
               >
-                {isTamil ? 'வெளியேறு' : 'लॉगआउट'}
+                <CloudUpload className={`w-3.5 h-3.5 text-amber-400 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="text-[11px] font-bold text-amber-300">
+                  {pendingSyncCount} {isEnglish ? 'Sync' : isTamil ? 'ஒத்திசை' : 'सिंक'}
+                </span>
               </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="btn-header-login"
-              onClick={() => setIsAuthModalOpen(true)}
-            >
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>{isTamil ? 'உள்நுழைக' : isHindi ? 'लॉगिन' : 'लॉगिन'}</span>
-            </button>
-          )}
+            )}
 
-          {currentStep !== STEPS.CONSENT && currentStep !== STEPS.RECEIPT && (
-            <button
-              type="button"
-              className="btn-header-reset"
-              onClick={handleReset}
-              title="Start Over"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span className="text-xs">
-                {isTamil ? 'மீண்டும் தொடங்க' : isHindi ? 'पुनः आरंभ' : 'पुन्हा सुरू'}
-              </span>
-            </button>
-          )}
+            {isAuthenticated ? (
+              <div className="auth-user-pill">
+                <span className="dot-green" />
+                <span className="text-xs font-semibold text-slate-200">
+                  +91 {user?.phone_number?.slice(-4)} ({user?.role === 'agent' ? (isEnglish ? 'Agent' : isTamil ? 'கள முகவர்' : 'एजेंट') : (isEnglish ? 'Borrower' : isTamil ? 'வாடிக்கையாளர்' : 'ग्राहक')})
+                </span>
+                <button
+                  type="button"
+                  className="text-xs text-rose-400 hover:text-rose-300 ml-1 font-bold"
+                  onClick={logout}
+                  title="Logout"
+                >
+                  {isEnglish ? 'Logout' : isTamil ? 'வெளியேறு' : 'लॉगआउट'}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="btn-header-login"
+                onClick={() => setIsAuthModalOpen(true)}
+              >
+                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                <span>{isEnglish ? 'Sign In' : isTamil ? 'உள்நுழைக' : isHindi ? 'लॉगिन' : 'लॉगिन'}</span>
+              </button>
+            )}
+
+            {currentStep !== STEPS.CONSENT && currentStep !== STEPS.RECEIPT && (
+              <button
+                type="button"
+                className="btn-header-reset"
+                onClick={handleReset}
+                title="Start Over"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span className="text-xs">
+                  {isEnglish ? 'Restart' : isTamil ? 'மீண்டும் தொடங்க' : isHindi ? 'पुनः आरंभ' : 'पुन्हा सुरू'}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -510,43 +585,129 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Flow Container */}
+      {/* Main Web Flow Container */}
       <main className="main-content">
-        {/* Step 1: Consent & Language */}
+        {/* Step 1: Consent & Language (Responsive 2-Column Web Hero Grid) */}
         {currentStep === STEPS.CONSENT && (
-          <div className="step-wrapper animate-fadeIn">
-            <LanguageSelect
-              currentLang={language}
-              onSelectLang={setLanguage}
-              onPlayPrompt={(lang) => {
-                const txt = lang === 'ta-IN'
-                  ? "வணக்கம்! உங்கள் கடன் விண்ணப்பத்தை குரல் வழியாக நிரப்ப நான் உங்களுக்கு உதவுவேன்."
-                  : lang === 'hi-IN'
-                  ? "नमस्ते! मैं आपका लोन आवेदन बोलकर भरने में मदद करूँगा।"
-                  : "नमस्कार! मी तुमचा कर्ज अर्ज बोलून भरण्यास मदत करेन.";
-                handleSpeak(txt);
-              }}
-            />
+          <div className="consent-desktop-grid animate-fadeIn">
+            <div className="hero-welcome-card">
+              <div className="hero-badge">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>
+                  {isEnglish
+                    ? "Voice-Assisted Rural Lending"
+                    : isTamil
+                    ? "குரல் வழி கடன் உதவி"
+                    : "स्वर-सहायित ग्रामीण ऋण"}
+                </span>
+              </div>
+              <h2 className="hero-headline">
+                {isEnglish
+                  ? "Apply for your loan by simply speaking."
+                  : isTamil
+                  ? "உங்கள் சொந்த மொழியில் பேசியே கடன் பெறுங்கள்."
+                  : isHindi
+                  ? "अपनी भाषा में बोलकर आसानी से लोन आवेदन भरें।"
+                  : "बोलून सहजतेने कर्ज अर्ज पूर्ण करा."}
+              </h2>
+              <p className="hero-subtext">
+                {isEnglish
+                  ? "Zero writing required. Speak naturally in your regional language. Our voice assistant extracts each detail and confirms it back with you before final submission."
+                  : isTamil
+                  ? "எழுத்துப் படிவங்கள் ஏதுமில்லை. உங்கள் சொந்த மொழியில் பேசுங்கள். ஒவ்வொரு விவரமும் உங்கள் ஒப்புதலுடன் வங்கிக்கு அனுப்பப்படும்."
+                  : isHindi
+                  ? "कुछ लिखने की जरूरत नहीं। अपनी भाषा में बोलें और हर जानकारी आवाज़ से सुन कर पुष्टि करें।"
+                  : "काहीही लिहिण्याची गरज नाही. आपल्या भाषेत बोला आणि खात्री करून अर्ज पूर्ण करा."}
+              </p>
 
-            <ConsentBanner
-              language={language}
-              onAccept={handleAcceptConsent}
-              onPlayConsent={() => {
-                const txt = language === 'ta-IN'
-                  ? "வணக்கம்! உங்கள் கடன் விண்ணப்பத்தை குரல் வழியாக நிரப்ப நான் உங்களுக்கு உதவுவேன். உங்கள் குரலை பதிவு செய்யலாமா?"
-                  : language === 'hi-IN'
-                  ? "नमस्ते! मैं आपका लोन आवेदन बोलकर भरने में मदद करूँगा। मैं आपकी आवाज़ रिकॉर्ड करूँगा, क्या हम शुरू करें?"
-                  : "नमस्कार! मी तुमचा कर्ज अर्ज बोलून भरण्यास मदत करेन. मी तुमचा आवाज रेकॉर्ड करेन, आपण सुरू करूया का?";
-                handleSpeak(txt);
-              }}
-              isSpeaking={isSpeaking}
-            />
+              <div className="hero-features-row">
+                <div className="hero-feat-chip">
+                  <Mic className="w-4 h-4 text-blue-400 shrink-0" />
+                  <span>{isEnglish ? "100% Voice Operated" : isTamil ? "100% குரல் வழி" : "100% बोलकर"}</span>
+                </div>
+                <div className="hero-feat-chip">
+                  <WifiOff className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{isEnglish ? "Works Offline" : isTamil ? "ஆஃப்லைனிலும் இயங்கும்" : "ऑफ़लाइन सक्षम"}</span>
+                </div>
+                <div className="hero-feat-chip">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{isEnglish ? "Bank-Grade Privacy" : isTamil ? "பாதுகாப்பானது" : "सुरक्षित"}</span>
+                </div>
+              </div>
+
+              <div className="hero-lang-selector-wrapper">
+                <LanguageSelect
+                  currentLang={language}
+                  onSelectLang={setLanguage}
+                  onPlayPrompt={(lang) => {
+                    const txt = lang === 'en-IN'
+                      ? "Hello! I will assist you in filling out your loan application using your voice."
+                      : lang === 'ta-IN'
+                      ? "வணக்கம்! உங்கள் கடன் விண்ணப்பத்தை குரல் வழியாக நிரப்ப நான் உங்களுக்கு உதவுவேன்."
+                      : lang === 'hi-IN'
+                      ? "नमस्ते! मैं आपका लोन आवेदन बोलकर भरने में मदद करूँगा।"
+                      : "नमस्कार! मी तुमचा कर्ज अर्ज बोलून भरण्यास मदत करेन.";
+                    handleSpeak(txt);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="consent-card-column">
+              <ConsentBanner
+                language={language}
+                onAccept={handleAcceptConsent}
+                onPlayConsent={() => {
+                  const txt = language === 'en-IN'
+                    ? "Hello! I will assist you in filling out your loan application using your voice. May I record your voice to begin?"
+                    : language === 'ta-IN'
+                    ? "வணக்கம்! உங்கள் கடன் விண்ணப்பத்தை குரல் வழியாக நிரப்ப நான் உங்களுக்கு உதவுவேன். உங்கள் குரலை பதிவு செய்யலாமா?"
+                    : language === 'hi-IN'
+                    ? "नमस्ते! मैं आपका लोन आवेदन बोलकर भरने में मदद करूँगा। मैं आपकी आवाज़ रिकॉर्ड करूँगा, क्या हम शुरू करें?"
+                    : "नमस्कार! मी तुमचा कर्ज अर्ज बोलून भरण्यास मदत करेन. मी तुमचा आवाज रेकॉर्ड करेन, आपण सुरू करूया का?";
+                  handleSpeak(txt);
+                }}
+                isSpeaking={isSpeaking}
+              />
+            </div>
           </div>
         )}
 
-        {/* Step 2: Voice Intake Recording */}
+        {/* Step 2: Voice Intake Recording (Expansive Web Studio Layout) */}
         {currentStep === STEPS.RECORD && (
-          <div className="step-wrapper animate-fadeIn">
+          <div className="record-desktop-container animate-fadeIn">
+            <div className="record-header-strip">
+              <div className="record-step-indicator">
+                <span className="record-step-pill">
+                  {isEnglish ? "Step 1 of 3: Voice Intake" : isTamil ? "படி 1 / 3: குரல் பதிவு" : isHindi ? "चरण 1 / 3: आवाज़ रिकॉर्डिंग" : "पायरी 1 / 3: व्हॉइस रेकॉर्डिंग"}
+                </span>
+                <h2 className="record-prompt-title">
+                  {isEnglish
+                    ? "Tell us about yourself and your loan need"
+                    : isTamil
+                    ? "உங்கள் விவரங்கள் மற்றும் கடன் தேவையை கூறுங்கள்"
+                    : isHindi
+                    ? "अपने बारे में और लोन की ज़रूरत बताएं"
+                    : "तुमच्याबद्दल आणि कर्जाच्या गरजेबद्दल सांगा"}
+                </h2>
+              </div>
+              <div className="record-fields-badge-list">
+                {[
+                  { key: 'name', label: isEnglish ? 'Name' : isTamil ? 'பெயர்' : 'नाम' },
+                  { key: 'village', label: isEnglish ? 'City/Address' : isTamil ? 'ஊர்' : 'गाँव/पता' },
+                  { key: 'amount', label: isEnglish ? 'Loan Amount' : isTamil ? 'கடன் தொகை' : 'लोन राशि' },
+                  { key: 'purpose', label: isEnglish ? 'Purpose' : isTamil ? 'நோக்கம்' : 'उद्देश्य' },
+                  { key: 'income', label: isEnglish ? 'Income' : isTamil ? 'வருமானம்' : 'कमाई' },
+                  { key: 'source', label: isEnglish ? 'Source' : isTamil ? 'ஆதாரம்' : 'साधन' },
+                  { key: 'aadhaar', label: isEnglish ? 'Aadhaar Last 4' : isTamil ? 'ஆதார் 4 எண்கள்' : 'आधार 4 अंक' },
+                ].map((item) => (
+                  <span key={item.key} className="expected-field-chip">
+                    {item.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <MicRecorder
               isRecording={isRecording}
               isProcessing={isProcessingVoice}
@@ -561,18 +722,22 @@ export default function App() {
 
         {/* Step 3: Processing */}
         {currentStep === STEPS.PROCESSING && (
-          <div className="step-wrapper text-center py-12 animate-pulse">
+          <div className="processing-desktop-container text-center py-16 animate-pulse">
             <div className="processing-hero">
               <Sparkles className="w-16 h-16 text-amber-400 mx-auto animate-bounce" />
-              <h2 className="text-xl font-bold text-white mt-4">
-                {isTamil
+              <h2 className="text-2xl font-bold text-white mt-4">
+                {isEnglish
+                  ? "Processing and understanding your voice..."
+                  : isTamil
                   ? "உங்கள் குரலை புரிந்து கொள்கிறோம்..."
                   : isHindi
                   ? "आपकी आवाज़ समझ रहे हैं..."
                   : "तुमचा आवाज समजून घेत आहे..."}
               </h2>
-              <p className="text-sm text-slate-300 mt-2">
-                {isTamil
+              <p className="text-base text-slate-300 mt-2">
+                {isEnglish
+                  ? "Extracting loan fields for interactive confirmation"
+                  : isTamil
                   ? "விண்ணப்பப் படிவம் தயாராகிறது..."
                   : isHindi
                   ? "आवेदन पत्र तैयार किया जा रहा है"
@@ -582,29 +747,97 @@ export default function App() {
           </div>
         )}
 
-        {/* Step 4: Field-by-Field Interactive Confirmation Loop (CORE DIFFERENTIATOR) */}
+        {/* Step 4: Field-by-Field Interactive Confirmation Loop (2-Column Desktop Grid with 7-Field Sidebar) */}
         {currentStep === STEPS.CONFIRM_LOOP && (
-          <div className="step-wrapper animate-fadeIn">
-            <FieldConfirmCard
-              fieldKey={currentFieldKey}
-              fieldIndex={currentFieldIndex}
-              totalFields={FIELD_KEYS.length}
-              value={formData[currentFieldKey]}
-              explanation={explanations[currentFieldKey]}
-              language={language}
-              onConfirmField={handleConfirmField}
-              onPlayTTS={(txt) => handleSpeak(txt)}
-              isSpeaking={isSpeaking}
-              onRecordCorrection={handleToggleCorrectionVoice}
-              isRecordingCorrection={isRecordingCorrection}
-              audioData={audioData}
-            />
+          <div className="confirm-desktop-grid animate-fadeIn">
+            {/* Left Sidebar Checklist */}
+            <aside className="progress-checklist-sidebar">
+              <div className="checklist-header">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="checklist-title">
+                    {isEnglish ? "Application Checklist" : isTamil ? "விண்ணப்ப விவரங்கள்" : isHindi ? "आवेदन चेकलिस्ट" : "अर्ज चेकलिस्ट"}
+                  </span>
+                  <span className="checklist-badge">
+                    {currentFieldIndex + 1} / {FIELD_KEYS.length}
+                  </span>
+                </div>
+                <div className="checklist-progress-bar">
+                  <div
+                    className="checklist-progress-fill"
+                    style={{ width: `${((currentFieldIndex) / FIELD_KEYS.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="checklist-items-stack">
+                {FIELD_KEYS.map((key, idx) => {
+                  const isDone = idx < currentFieldIndex;
+                  const isCurrent = idx === currentFieldIndex;
+                  const val = formData[key];
+                  const labels = FIELD_SIDEBAR_LABELS[language] || FIELD_SIDEBAR_LABELS['en-IN'];
+                  const label = labels[key] || key;
+
+                  let formattedVal = val;
+                  if (val && (key.includes('amount') || key.includes('income'))) {
+                    formattedVal = `₹${Number(val).toLocaleString('en-IN')}`;
+                  } else if (val && key.includes('last4')) {
+                    formattedVal = `•••• ${val}`;
+                  }
+
+                  return (
+                    <div
+                      key={key}
+                      className={`checklist-item ${isCurrent ? 'active' : ''} ${isDone ? 'completed' : 'pending'}`}
+                      onClick={() => {
+                        if (isDone) setCurrentFieldIndex(idx);
+                      }}
+                      role={isDone ? "button" : undefined}
+                      title={isDone ? (isEnglish ? "Click to review" : "மீண்டும் சரிபார்க்க") : undefined}
+                    >
+                      <div className="checklist-status-icon">
+                        {isDone ? (
+                          <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
+                        ) : isCurrent ? (
+                          <div className="active-pulse-dot" />
+                        ) : (
+                          <span className="pending-num">{idx + 1}</span>
+                        )}
+                      </div>
+                      <div className="checklist-content">
+                        <div className="checklist-field-name">{label}</div>
+                        <div className="checklist-field-val">
+                          {isDone ? (formattedVal || "—") : isCurrent ? (isEnglish ? "Confirming now" : isTamil ? "சரிபார்க்கப்படுகிறது" : "सत्यापित हो रहा") : (isEnglish ? "Upcoming" : isTamil ? "அடுத்தது" : "प्रलंबित")}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </aside>
+
+            {/* Right Main Focus Area */}
+            <div className="confirm-main-card">
+              <FieldConfirmCard
+                fieldKey={currentFieldKey}
+                fieldIndex={currentFieldIndex}
+                totalFields={FIELD_KEYS.length}
+                value={formData[currentFieldKey]}
+                explanation={explanations[currentFieldKey]}
+                language={language}
+                onConfirmField={handleConfirmField}
+                onPlayTTS={(txt) => handleSpeak(txt)}
+                isSpeaking={isSpeaking}
+                onRecordCorrection={handleToggleCorrectionVoice}
+                isRecordingCorrection={isRecordingCorrection}
+                audioData={audioData}
+              />
+            </div>
           </div>
         )}
 
-        {/* Step 5: Application Summary */}
+        {/* Step 5: Application Summary (Wide 2-Column Grid) */}
         {currentStep === STEPS.SUMMARY && (
-          <div className="step-wrapper animate-fadeIn">
+          <div className="summary-desktop-container animate-fadeIn">
             <ApplicationSummary
               formData={formData}
               language={language}
@@ -625,7 +858,7 @@ export default function App() {
 
         {/* Step 6: Voice Receipt & Verification Status */}
         {currentStep === STEPS.RECEIPT && receiptData && (
-          <div className="step-wrapper animate-fadeIn">
+          <div className="receipt-desktop-container animate-fadeIn">
             <ReceiptModal
               receiptData={receiptData}
               language={language}
@@ -639,11 +872,15 @@ export default function App() {
 
       {/* Footer Accessibility Notice */}
       <footer className="app-footer">
-        <p className="text-[11px] text-slate-500 text-center">
-          {isTamil
-            ? "கிராமப்புற இந்தியாவின் குரல் வழி தொழில்நுட்பம் | 100% Voice & Icon Operated"
-            : "ग्रामीण भारत के लिए स्वर-सक्षम तकनीक | 100% Voice & Icon Operated"}
-        </p>
+        <div className="app-footer-inner">
+          <p className="text-xs text-slate-400 text-center">
+            {isEnglish
+              ? "Voice-Only Rural Lending Platform • Built for accessible, icon-heavy financial inclusion"
+              : isTamil
+              ? "கிராமப்புற இந்தியாவின் குரல் வழி தொழில்நுட்பம் • 100% Voice & Icon Operated"
+              : "ग्रामीण भारत के लिए स्वर-सक्षम तकनीक • 100% Voice & Icon Operated"}
+          </p>
+        </div>
       </footer>
 
       {/* Genuine Authentication Modal (JWT based) */}

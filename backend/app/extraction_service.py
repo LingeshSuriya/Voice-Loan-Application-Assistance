@@ -152,88 +152,122 @@ class ExtractionService:
         return cleaned, f"{field_name} மாற்றப்பட்டது"
 
     def _rule_based_extraction(self, text: str, language_code: str) -> ExtractionResponse:
-        """Intelligent offline pattern & semantic rule matcher for Hindi/Marathi/Tamil transcripts."""
+        """Intelligent offline pattern & semantic rule matcher for Hindi/Marathi/Tamil/English transcripts."""
         data = LoanApplicationData()
         explanations: Dict[str, str] = {}
         is_tamil = language_code == "ta-IN"
+        is_english = language_code == "en-IN"
 
         # 1. Applicant Name
         name_match = re.search(
-            r'(?:என்\s+பெயர்|பெயர்|मेरा\s+नाम|नाव|naam|name\s+is|நான்|main|मैं)\s+([A-Za-z\u0900-\u097F\u0B80-\u0BFF]+(?:\s+[A-Za-z\u0900-\u097F\u0B80-\u0BFF]+)?)(?:\s+हूँ|\s+है|\s+आहे|\s*,|\s+மதுரை|\s+சென்னை|\s+ஊர்|\s+भोजपुर|\s+गाँव|\s+से|\s+आणि|$)',
+            r'(?:my\s+name\s+is|name\s+is|this\s+is|என்\s+பெயர்|பெயர்|मेरा\s+नाम|नाव|naam|मैं|main)\s+([A-Za-z\u0900-\u097F\u0B80-\u0BFF]+(?:\s+[A-Za-z\u0900-\u097F\u0B80-\u0BFF]+)?)(?:\s+हूँ|\s+है|\s+आहे|\s*,|\s+and|\s+i\s+live|\s+மதுரை|\s+சென்னை|\s+ஊர்|\s+भोजपुर|\s+गाँव|\s+से|\s+आणि|$)',
             text, re.IGNORECASE
         )
         if name_match:
             name_val = name_match.group(1).strip()
             name_val = re.sub(r'\s+(है|हूँ|आहे|is|am|என்பது)$', '', name_val, flags=re.IGNORECASE).strip()
-            if name_val.lower() not in ["ஒரு", "நான்", "இங்கே", "ஒருவர்", "एक", "यहाँ", "मी", "लोन", "कर्ज", "a", "an", "है", "हूँ"]:
+            if name_val.lower() not in ["ஒரு", "நான்", "இங்கே", "ஒருவர்", "एक", "यहाँ", "मी", "लोन", "कर्ज", "a", "an", "the", "loan", "rupees", "है", "हूँ"]:
                 data.applicant_name = name_val
-                explanations["applicant_name"] = f"'{name_val}' என்பதை உங்கள் பெயராக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{name_val}' को आपका नाम समझा"
+                if is_english:
+                    explanations["applicant_name"] = f"Understood '{name_val}' as applicant name"
+                elif is_tamil:
+                    explanations["applicant_name"] = f"'{name_val}' என்பதை உங்கள் பெயராக புரிந்து கொண்டேன்"
+                else:
+                    explanations["applicant_name"] = f"मैंने '{name_val}' को आपका नाम समझा"
         
         # Short text fallback
         if not data.applicant_name and len(text.split()) <= 3 and not re.search(r'\d', text):
             clean_name = re.sub(r'^(नहीं|ना|no|nahi|இல்லை|இல்ல)\s+', '', text, flags=re.IGNORECASE).strip()
             clean_name = re.sub(r'\s+(है|हूँ|आहे|is|am|என்பது)$', '', clean_name, flags=re.IGNORECASE).strip()
-            if clean_name and clean_name.lower() not in ["ஒரு", "ஆம்", "இல்லை", "एक", "हाँ", "नहीं", "yes", "no", "है", "हूँ"]:
+            if clean_name and clean_name.lower() not in ["ஒரு", "ஆம்", "இல்லை", "एक", "हाँ", "नहीं", "yes", "no", "ok", "है", "हूँ"]:
                 data.applicant_name = clean_name
-                explanations["applicant_name"] = f"'{clean_name}' என்பதை உங்கள் பெயராக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{clean_name}' को आपका नाम समझा"
+                if is_english:
+                    explanations["applicant_name"] = f"Understood '{clean_name}' as applicant name"
+                elif is_tamil:
+                    explanations["applicant_name"] = f"'{clean_name}' என்பதை உங்கள் பெயராக புரிந்து கொண்டேன்"
+                else:
+                    explanations["applicant_name"] = f"मैंने '{clean_name}' को आपका नाम समझा"
 
         if not data.applicant_name:
-            explanations["applicant_name"] = "பெயர் குறிப்பிடப்படவில்லை" if is_tamil else "नाम का उल्लेख नहीं मिला"
+            explanations["applicant_name"] = "Applicant name not mentioned" if is_english else ("பெயர் குறிப்பிடப்படவில்லை" if is_tamil else "नाम का उल्लेख नहीं मिला")
 
         # 2. Village or Address
         vill_match = re.search(
-            r'(?:(?:நான்|நான்\s+வசிப்பது|நான்\s+இருப்பது|मैं|मी|हम)\s+)?([A-Za-z\u0900-\u097F\u0B80-\u0BFF]+(?:\s+[A-Za-z\u0900-\u097F\u0B80-\u0BFF]+)?)\s+(?:ஊரைச்\s+சேர்ந்தவன்|ஊரைச்\s+சேர்ந்தவள்|கிராமம்|ஊர்|வசிப்பவர்|गाँव\s+का|गाँव\s+की|गावाचा|से\s+हूँ|चा\s+आहे|रहता\s+हूँ|रहने\s+वाली\s+हूँ)',
+            r'(?:(?:live\s+in|from|at|address\s+is|நான்|நான்\s+வசிப்பது|நான்\s+இருப்பது|मैं|मी|हम)\s+)?([A-Za-z\u0900-\u097F\u0B80-\u0BFF]+(?:\s+[A-Za-z\u0900-\u097F\u0B80-\u0BFF]+)?)\s+(?:village|city|town|ஊரைச்\s+சேர்ந்தவன்|ஊரைச்\s+சேர்ந்தவள்|கிராமம்|ஊர்|வசிப்பவர்|गाँव\s+का|गाँव\s+की|गावाचा|से\s+हूँ|चा\s+आहे|रहता\s+हूँ|रहने\s+वाली\s+हूँ)',
             text, re.IGNORECASE
         )
         if vill_match:
             vill_val = vill_match.group(1).strip()
-            vill_val = re.sub(r'^(நான்|मैं|मी|हम|main|hum)\s+', '', vill_val, flags=re.IGNORECASE).strip()
+            vill_val = re.sub(r'^(நான்|मैं|मी|हम|main|hum|i|live|in)\s+', '', vill_val, flags=re.IGNORECASE).strip()
             data.village_or_address = vill_val
-            explanations["village_or_address"] = f"'{vill_val}' என்பதை உங்கள் ஊராக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{vill_val}' को आपका गाँव/पता समझा"
+            if is_english:
+                explanations["village_or_address"] = f"Understood '{vill_val}' as address"
+            elif is_tamil:
+                explanations["village_or_address"] = f"'{vill_val}' என்பதை உங்கள் ஊராக புரிந்து கொண்டேன்"
+            else:
+                explanations["village_or_address"] = f"मैंने '{vill_val}' को आपका गाँव/पता समझा"
         else:
             known_locs = [
                 "மதுரை", "சென்னை", "கோவை", "திருச்சி", "சேலம்", "தஞ்சாவூர்", "ஈரோடு", "நெல்லை", "வேலூர்", "திண்டுக்கல்",
-                "Madurai", "Chennai", "Coimbatore", "भोजपुर", "सीतापुर", "रालेगण सिद्धि", "पटना", "वाराणसी", "पुणे"
+                "Madurai", "Chennai", "Coimbatore", "Salem", "Trichy", "Tirunelveli", "Delhi", "Mumbai", "Bangalore",
+                "भोजपुर", "सीतापुर", "रालेगण सिद्धि", "पटना", "वाराणसी", "पुणे"
             ]
             for loc in known_locs:
                 if loc.lower() in text.lower():
                     data.village_or_address = loc
-                    explanations["village_or_address"] = f"'{loc}' என்பதை உங்கள் ஊராக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{loc}' को आपका गाँव/पता समझा"
+                    if is_english:
+                        explanations["village_or_address"] = f"Understood '{loc}' as address"
+                    elif is_tamil:
+                        explanations["village_or_address"] = f"'{loc}' என்பதை உங்கள் ஊராக புரிந்து கொண்டேன்"
+                    else:
+                        explanations["village_or_address"] = f"मैंने '{loc}' को आपका गाँव/पता समझा"
                     break
         if not data.village_or_address:
-            explanations["village_or_address"] = "ஊர் அல்லது முகவரி குறிப்பிடப்படவில்லை" if is_tamil else "गाँव या पते का उल्लेख नहीं मिला"
+            explanations["village_or_address"] = "Address not mentioned" if is_english else ("ஊர் அல்லது முகவரி குறிப்பிடப்படவில்லை" if is_tamil else "गाँव या पते का उल्लेख नहीं मिला")
 
         # 3. Loan Amount
         loan_amt_match = re.search(
-            r'(?:எனக்கு|मुझे|हवे\s+आहे)?\s*([0-9,]+|\S+\s+ஆயிரம்|\S+\s+லட்சம்|\S+\s+हजार|\S+\s+लाख)\s*(?:ரூபாய்|ரூபாய்க்கு|ரூ|रुपये|रूपये|का|रुपयांचा)?\s*(?:கடன்|लोन|कर्ज|loan)',
+            r'(?:loan\s+of|loan\s+amount\s+of|need|require|எனக்கு|मुझे|हवे\s+आहे)?\s*([0-9,]+|\S+\s+ஆயிரம்|\S+\s+லட்சம்|\S+\s+हजार|\S+\s+लाख|\S+\s+thousand|\S+\s+lakh)\s*(?:rupees|rs|inr|ரூபாய்|ரூபாய்க்கு|ரூ|रुपये|रूपये|का|रुपयांचा)?\s*(?:கடன்|लोन|कर्ज|loan)',
             text, re.IGNORECASE
         )
         if loan_amt_match:
             amt = self._extract_amount_number(loan_amt_match.group(1))
             if amt:
                 data.loan_amount = amt
-                explanations["loan_amount"] = f"'{loan_amt_match.group(1).strip()}' என்பதை கடன் தொகையாக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{loan_amt_match.group(1).strip()}' को लोन राशि समझा"
+                raw_amt_str = loan_amt_match.group(1).strip()
+                if is_english:
+                    explanations["loan_amount"] = f"Understood '{raw_amt_str}' as loan amount"
+                elif is_tamil:
+                    explanations["loan_amount"] = f"'{raw_amt_str}' என்பதை கடன் தொகையாக புரிந்து கொண்டேன்"
+                else:
+                    explanations["loan_amount"] = f"मैंने '{raw_amt_str}' को लोन राशि समझा"
         if not data.loan_amount:
             for num_match in re.finditer(r'\b(\d{1,3}(?:,\d{3})+|\d{4,6})\b', text):
                 val = float(num_match.group(1).replace(",", ""))
                 if val >= 5000 and val != data.monthly_income:
                     data.loan_amount = val
-                    explanations["loan_amount"] = f"'{num_match.group(1)}' என்பதை கடன் தொகையாக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{num_match.group(1)}' को लोन राशि समझा"
+                    if is_english:
+                        explanations["loan_amount"] = f"Understood '{num_match.group(1)}' as loan amount"
+                    elif is_tamil:
+                        explanations["loan_amount"] = f"'{num_match.group(1)}' என்பதை கடன் தொகையாக புரிந்து கொண்டேன்"
+                    else:
+                        explanations["loan_amount"] = f"मैंने '{num_match.group(1)}' को लोन राशि समझा"
                     break
         if not data.loan_amount:
-            explanations["loan_amount"] = "கடன் தொகை குறிப்பிடப்படவில்லை" if is_tamil else "लोन राशि का उल्लेख नहीं मिला"
+            explanations["loan_amount"] = "Loan amount not mentioned" if is_english else ("கடன் தொகை குறிப்பிடப்படவில்லை" if is_tamil else "लोन राशि का उल्लेख नहीं मिला")
 
         # 4. Loan Purpose
         purpose_keywords = [
-            (r'மளிகை\s+கடை|மளிகை', "மளிகை கடை வியாபாரம் (business)"),
-            (r'கடை|வியாபாரம்|தொழில்|business', "சிறு வியாபாரம் (business)"),
-            (r'பால்\s+பண்ணை|மாடு|பசு|பால்|डेयरी|दूध', "பால் பண்ணை மற்றும் கால்நடை (agriculture)"),
-            (r'விவசாயம்|பயிர்|விதை|உரம்|farming|खेती|फसल', "விவசாயம் மற்றும் பண்ணை (agriculture)"),
-            (r'டிராக்டர்|மருத்துவம்|சிகிச்சை|medical', "மருத்துவ சிகிச்சை (medical)"),
-            (r'படிப்பு|கல்வி|education', "கல்வி செலவு (education)"),
+            (r'மளிகை\s+கடை|மளிகை|retail\s+store|retail\s+shop|store', "Retail store (business)" if is_english else "மளிகை கடை வியாபாரம் (business)"),
+            (r'கடை|வியாபாரம்|தொழில்|business|small\s+business', "Small business (business)" if is_english else "சிறு வியாபாரம் (business)"),
+            (r'பால்\s+பண்ணை|மாடு|பசு|பால்|dairy|cow|livestock', "Dairy and livestock (agriculture)" if is_english else "பால் பண்ணை மற்றும் கால்நடை (agriculture)"),
+            (r'விவசாயம்|பயிர்|விதை|உரம்|farming|farm|crops', "Farming and agriculture (agriculture)" if is_english else "விவசாயம் மற்றும் பண்ணை (agriculture)"),
+            (r'டிராக்டர்|tractor', "Tractor repair / purchase (agriculture)" if is_english else "டிராக்டர் (agriculture)"),
+            (r'மருத்துவம்|சிகிச்சை|medical|treatment', "Medical treatment (medical)" if is_english else "மருத்துவ சிகிச்சை (medical)"),
+            (r'படிப்பு|கல்வி|education|school|college', "Education expense (education)" if is_english else "கல்வி செலவு (education)"),
             (r'किराना\s+दुकान|kirana\s+store', "किराना दुकान (business)"),
             (r'दुकान|व्यापार|छोटा\s+काम', "छोटा व्यापार (business)"),
-            (r'गाय|भैंस', "डेयरी और पशुपालन (agriculture)"),
+            (r'गाय|भैंस|डेयरी|दूध', "डेयरी और पशुपालन (agriculture)"),
             (r'खेती|फसल|बीज|खाद', "खेती और कृषि (agriculture)"),
             (r'ट्रैक्टर|मरम्मत', "ट्रैक्टर मरम्मत (agriculture)"),
             (r'इलाज|दवाई|अस्पताल', "चिकित्सा और इलाज (medical)"),
@@ -242,53 +276,74 @@ class ExtractionService:
         for pattern, category in purpose_keywords:
             if re.search(pattern, text, re.IGNORECASE):
                 data.loan_purpose = category
-                explanations["loan_purpose"] = f"'{pattern.split('|')[0]}' என்பதை கடன் நோக்கமாக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{pattern.split('|')[0]}' को लोन का उद्देश्य समझा"
+                if is_english:
+                    explanations["loan_purpose"] = f"Understood '{category}' as loan purpose"
+                elif is_tamil:
+                    explanations["loan_purpose"] = f"'{pattern.split('|')[0]}' என்பதை கடன் நோக்கமாக புரிந்து கொண்டேன்"
+                else:
+                    explanations["loan_purpose"] = f"मैंने '{pattern.split('|')[0]}' को लोन का उद्देश्य समझा"
                 break
         if not data.loan_purpose:
-            explanations["loan_purpose"] = "கடன் நோக்கம் குறிப்பிடப்படவில்லை" if is_tamil else "लोन के उद्देश्य का उल्लेख नहीं मिला"
+            explanations["loan_purpose"] = "Loan purpose not mentioned" if is_english else ("கடன் நோக்கம் குறிப்பிடப்படவில்லை" if is_tamil else "लोन के उद्देश्य का उल्लेख नहीं मिला")
 
         # 5. Monthly Income
         income_match = re.search(
-            r'(?:மாத\s+வருமானம்|மாத\s+சம்பளம்|வருமானம்|महीने\s+की\s+कमाई|मासिक\s+उत्पन्न|दरमहा|महीने\s+में|कमाते\s+हैं)\s*(?:சுமார்|தோராயமாக|लगभग|करीब)?\s*([0-9,]+|\S+\s+ஆயிரம்|\S+\s+हजार)',
+            r'(?:monthly\s+income|income\s+is|monthly\s+salary|salary|earn|மாத\s+வருமானம்|மாத\s+சம்பளம்|வருமானம்|महीने\s+की\s+कमाई|मासिक\s+उत्पन्न|दरमहा|महीने\s+में|कमाते\s+हैं)\s*(?:of|is|around|சுமார்|தோராயமாக|लगभग|करीब)?\s*([0-9,]+|\S+\s+ஆயிரம்|\S+\s+हजार|\S+\s+thousand)',
             text, re.IGNORECASE
         )
         if income_match:
             inc = self._extract_amount_number(income_match.group(1))
             if inc:
                 data.monthly_income = inc
-                explanations["monthly_income"] = f"'{income_match.group(1).strip()}' என்பதை உங்கள் மாத வருமானமாக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{income_match.group(1).strip()}' को आपकी मासिक कमाई समझा"
+                raw_inc_str = income_match.group(1).strip()
+                if is_english:
+                    explanations["monthly_income"] = f"Understood '{raw_inc_str}' as monthly income"
+                elif is_tamil:
+                    explanations["monthly_income"] = f"'{raw_inc_str}' என்பதை உங்கள் மாத வருமானமாக புரிந்து கொண்டேன்"
+                else:
+                    explanations["monthly_income"] = f"मैंने '{raw_inc_str}' को आपकी मासिक कमाई समझा"
         if not data.monthly_income:
-            explanations["monthly_income"] = "மாத வருமானம் குறிப்பிடப்படவில்லை" if is_tamil else "मासिक आय का उल्लेख नहीं मिला"
+            explanations["monthly_income"] = "Monthly income not mentioned" if is_english else ("மாத வருமானம் குறிப்பிடப்படவில்லை" if is_tamil else "मासिक आय का उल्लेख नहीं मिला")
 
         # 6. Income Source
         source_keywords = [
             (r'விவசாயம்\s+மற்றும்\s+பால்|பால்\s+விற்பனை', "விவசாயம் மற்றும் பால் விற்பனை (farming/dairy)"),
-            (r'விவசாயம்|farming', "விவசாயம் (farming)"),
-            (r'மளிகை\s+கடை|மளிகை|கடை|வியாபாரம்', "மளிகை கடை / வியாபாரம் (small shop)"),
-            (r'கூலி\s+வேலை|தினக்கூலி', "தினக்கூலி (daily wage)"),
-            (r'மாத\s+சம்பளம்|வேலை|salary', "பணி / வேலை (employment)"),
+            (r'விவசாயம்|farming|agriculture', "Farming (agriculture)" if is_english else "விவசாயம் (farming)"),
+            (r'மளிகை\s+கடை|மளிகை|கடை|வியாபாரம்|retail\s+store|retail\s+shop|shop', "Retail store (small shop)" if is_english else "மளிகை கடை / வியாபாரம் (small shop)"),
+            (r'கூலி\s+வேலை|தினக்கூலி|daily\s+wage', "Daily wage worker (daily wage)" if is_english else "தினக்கூலி (daily wage)"),
+            (r'மாத\s+சம்பளம்|வேலை|salary|job|service', "Salaried job (employment)" if is_english else "பணி / வேலை (employment)"),
             (r'खेती\s+और\s+दूध|दूध\s+बेचकर', "खेती और दूध बिक्री (farming/dairy)"),
             (r'खेती|कृषि', "खेती (farming)"),
             (r'दुकान\s+से|किराना', "छोटा व्यापार / दुकान (small shop)"),
-            (r'मजदूरी|दिहाड़ी|daily\s+wage', "दैनिक मजदूरी (daily wage)"),
-            (r'नौकरी|service', "निजी नौकरी (employment)")
+            (r'मजदूरी|दिहाड़ी', "दैनिक मजदूरी (daily wage)"),
+            (r'नौकरी', "निजी नौकरी (employment)")
         ]
         for pattern, src in source_keywords:
             if re.search(pattern, text, re.IGNORECASE):
                 data.income_source = src
-                explanations["income_source"] = f"'{src}' என்பதை வருமான ஆதாரமாக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{src}' को कमाई का मुख्य साधन समझा"
+                if is_english:
+                    explanations["income_source"] = f"Understood '{src}' as income source"
+                elif is_tamil:
+                    explanations["income_source"] = f"'{src}' என்பதை வருமான ஆதாரமாக புரிந்து கொண்டேன்"
+                else:
+                    explanations["income_source"] = f"मैंने '{src}' को कमाई का मुख्य साधन समझा"
                 break
         if not data.income_source:
-            explanations["income_source"] = "வருமான ஆதாரம் குறிப்பிடப்படவில்லை" if is_tamil else "कमाई के साधन का उल्लेख नहीं मिला"
+            explanations["income_source"] = "Income source not mentioned" if is_english else ("வருமான ஆதாரம் குறிப்பிடப்படவில்லை" if is_tamil else "कमाई के साधन का उल्लेख नहीं मिला")
 
         # 7. Aadhaar last 4
-        aadhaar_match = re.search(r'(?:ஆதார்|आधार|aadhaar).*?(\d{4})', text, re.IGNORECASE)
+        aadhaar_match = re.search(r'(?:aadhaar|aadhar|card|ஆதார்|आधार).*?(\d{4})', text, re.IGNORECASE)
         if aadhaar_match:
             val = aadhaar_match.group(1)
             data.aadhaar_last4 = val
-            explanations["aadhaar_last4"] = f"'{val}' என்பதை ஆதார் கடைசி 4 எண்களாக புரிந்து கொண்டேன்" if is_tamil else f"मैंने '{val}' को आधार के अंतिम 4 अंक समझा"
+            if is_english:
+                explanations["aadhaar_last4"] = f"Understood '{val}' as Aadhaar last 4 digits"
+            elif is_tamil:
+                explanations["aadhaar_last4"] = f"'{val}' என்பதை ஆதார் கடைசி 4 எண்களாக புரிந்து கொண்டேன்"
+            else:
+                explanations["aadhaar_last4"] = f"मैंने '{val}' को आधार के अंतिम 4 अंक समझा"
         else:
-            explanations["aadhaar_last4"] = "ஆதார் எண் குறிப்பிடப்படவில்லை" if is_tamil else "आधार नंबर का उल्लेख नहीं मिला"
+            explanations["aadhaar_last4"] = "Aadhaar number not mentioned" if is_english else ("ஆதார் எண் குறிப்பிடப்படவில்லை" if is_tamil else "आधार नंबर का उल्लेख नहीं मिला")
 
         return ExtractionResponse(
             data=data,
