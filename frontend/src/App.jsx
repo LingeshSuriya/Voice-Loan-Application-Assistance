@@ -161,6 +161,48 @@ function isNegativeConfirmation(text) {
   return negativeWords.some(w => t.includes(w));
 }
 
+function translateEnglishToRegional(text, language) {
+  if (!text || typeof text !== 'string') return text;
+  const t = text.trim();
+  if (language === 'en-IN') return t;
+
+  const englishToTamilMap = [
+    { pattern: /\b(education|study|school|college|degree|student)\b/i, replace: 'கல்வித் தேவை' },
+    { pattern: /\b(business|shop|store|retail|trade|groceries)\b/i, replace: 'சிறு வியாபாரம்' },
+    { pattern: /\b(farming|agriculture|crop|farm|seeds|fertilizer)\b/i, replace: 'விவசாயத் தேவை' },
+    { pattern: /\b(dairy|cow|milk|cattle|buffalo|livestock)\b/i, replace: 'பால் பண்ணை' },
+    { pattern: /\b(medical|treatment|hospital|doctor|health|medicine)\b/i, replace: 'மருத்துவச் செலவு' },
+    { pattern: /\b(daily\s*wage|labor|labour|worker)\b/i, replace: 'தினக்கூலி வேலை' },
+    { pattern: /\b(personal|house|home|marriage|wedding)\b/i, replace: 'குடும்பத் தேவை' },
+  ];
+
+  const englishToHindiMap = [
+    { pattern: /\b(education|study|school|college|degree|student)\b/i, replace: 'शिक्षा और पढ़ाई' },
+    { pattern: /\b(business|shop|store|retail|trade|groceries)\b/i, replace: 'छोटा व्यापार' },
+    { pattern: /\b(farming|agriculture|crop|farm|seeds|fertilizer)\b/i, replace: 'खेती और कृषि' },
+    { pattern: /\b(dairy|cow|milk|cattle|buffalo|livestock)\b/i, replace: 'डेयरी और पशुपालन' },
+    { pattern: /\b(medical|treatment|hospital|doctor|health|medicine)\b/i, replace: 'चिकित्सा और इलाज' },
+    { pattern: /\b(daily\s*wage|labor|labour|worker)\b/i, replace: 'दैनिक मजदूरी' },
+    { pattern: /\b(personal|house|home|marriage|wedding)\b/i, replace: 'घरेलू ज़रूरत' },
+  ];
+
+  const map = language === 'ta-IN' ? englishToTamilMap : (language === 'hi-IN' ? englishToHindiMap : []);
+  for (const item of map) {
+    if (item.pattern.test(t)) {
+      return item.replace;
+    }
+  }
+
+  if (language === 'ta-IN') {
+    if (t.includes('எஜுகேஷன்') || t.includes('பர்பஸ்') || t.includes('ஸ்டடி')) return 'கல்வித் தேவை';
+    if (t.includes('பிசினஸ்') || t.includes('ஷாப்') || t.includes('ஸ்டோர்')) return 'சிறு வியாபாரம்';
+    if (t.includes('ஃபார்மிங்') || t.includes('அக்ரிகல்ச்சர்')) return 'விவசாயத் தேவை';
+    if (t.includes('மெடிக்கல்') || t.includes('ஹாஸ்பிட்டல்')) return 'மருத்துவச் செலவு';
+  }
+
+  return t;
+}
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState(PAGES.OVERVIEW);
   const [language, setLanguage] = useState('ta-IN');
@@ -397,6 +439,7 @@ export default function App() {
           }
 
           if (newValue) {
+            newValue = translateEnglishToRegional(newValue, language);
             updated[targetField] = newValue;
             setPendingConfirmField(targetField);
             const question = buildConfirmQuestion(targetField, newValue, language);
