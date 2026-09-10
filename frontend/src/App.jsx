@@ -635,17 +635,23 @@ export default function App() {
         let rawFieldVal = null;
         let candList = [];
 
-        if (extractedData[targetField]) {
+        if (targetField === 'loan_amount' || targetField === 'monthly_income') {
+          const numParsed = parseSpokenNumber(spokenTranscript);
+          if (numParsed !== null && numParsed >= 500) {
+            rawFieldVal = numParsed;
+          } else if (extractedData[targetField]) {
+            rawFieldVal = parseSpokenNumber(extractedData[targetField]) || extractedData[targetField];
+          } else {
+            rawFieldVal = spokenTranscript;
+          }
+        } else if (extractedData[targetField]) {
           rawFieldVal = extractedData[targetField];
         } else {
           const misclassifiedKey = Object.keys(extractedData).find(k => extractedData[k] && (k !== targetField));
           if (misclassifiedKey && extractedData[misclassifiedKey] && !confirmedFields.includes(targetField)) {
             rawFieldVal = extractedData[misclassifiedKey];
           } else {
-            if (targetField === 'loan_amount' || targetField === 'monthly_income') {
-              const numParsed = parseSpokenNumber(spokenTranscript);
-              rawFieldVal = numParsed !== null ? numParsed : spokenTranscript;
-            } else if (targetField === 'aadhaar_last4') {
+            if (targetField === 'aadhaar_last4') {
               const digits = spokenTranscript.replace(/\D/g, '').slice(-4);
               rawFieldVal = digits || spokenTranscript;
             } else {

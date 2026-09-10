@@ -72,6 +72,10 @@ const HARDCODED_TRANSLITERATION_MAP = {
   'इंदौर': 'Indore',
   'भोपाल': 'Bhopal',
   'वाराणसी': 'Varanasi',
+  'சுடலை முத்து': 'Sudalai Muthu',
+  'சுடலைமுத்து': 'Sudalaimuthu',
+  'சுடலை': 'Sudalai',
+  'முத்து': 'Muthu',
   'पटना': 'Patna'
 };
 
@@ -79,56 +83,134 @@ const HARDCODED_TRANSLITERATION_MAP = {
  * Phonetic Tamil to Latin transliterator for unmapped terms.
  */
 function transliterateTamilToLatin(text) {
-  const pulliMap = {
-    'க்': 'k', 'ங்': 'ng', 'ச்': 'ch', 'ஞ்': 'nj', 'ட்': 't', 'ண்': 'n',
-    'த்': 'th', 'ந்': 'n', 'ப்': 'p', 'ம்': 'm', 'ய்': 'y', 'ர்': 'r',
-    'ல்': 'l', 'வ்': 'v', 'ழ்': 'zh', 'ள்': 'l', 'ற்': 'r', 'ன்': 'n',
-    'ஜ்': 'j', 'ஷ்': 'sh', 'ஸ்': 's', 'ஹ்': 'h'
-  };
+  if (!text) return '';
 
-  const charMap = {
+  const independentVowels = {
     'அ': 'a', 'ஆ': 'aa', 'இ': 'i', 'ஈ': 'ee', 'உ': 'u', 'ஊ': 'oo',
-    'எ': 'e', 'ஏ': 'ae', 'ஐ': 'ai', 'ஒ': 'o', 'ஓ': 'oo', 'ஔ': 'au',
-    'க': 'ka', 'ங': 'nga', 'ச': 'sa', 'ஞ': 'nya', 'ட': 'ta', 'ண': 'na',
-    'த': 'tha', 'ந': 'na', 'ப': 'pa', 'ம': 'ma', 'ய': 'ya', 'ர': 'ra',
-    'ல': 'la', 'வ': 'va', 'ழ': 'zha', 'ள': 'la', 'ற': 'ra', 'ன': 'na',
-    'ஜ': 'ja', 'ஷ': 'sha', 'ஸ': 'sa', 'ஹ': 'ha', 'க்ஷ': 'ksha',
-    'ா': 'a', 'ி': 'i', 'ீ': 'ee', 'ு': 'u', 'ூ': 'oo', 'ெ': 'e',
-    'ே': 'ae', 'ை': 'ai', 'ொ': 'o', 'ோ': 'oo', 'ௌ': 'au'
+    'எ': 'e', 'ஏ': 'ae', 'ஐ': 'ai', 'ஒ': 'o', 'ஓ': 'oo', 'ஔ': 'au'
   };
 
-  let res = text;
-  for (const [k, v] of Object.entries(pulliMap)) {
-    res = res.replaceAll(k, v);
+  const consonantRoots = {
+    'க': 'k', 'ங': 'ng', 'ச': 's', 'ஞ': 'ny', 'ட': 'd', 'ண': 'n',
+    'த': 'th', 'ந': 'n', 'ப': 'p', 'ம': 'm', 'ய': 'y', 'ர': 'r',
+    'ல': 'l', 'வ': 'v', 'ழ': 'zh', 'ள': 'l', 'ற': 'r', 'ன': 'n',
+    'ஜ': 'j', 'ஷ': 'sh', 'ஸ': 's', 'ஹ': 'h', 'க்ஷ': 'ksh'
+  };
+
+  const vowelSigns = {
+    'ா': 'a', 'ி': 'i', 'ீ': 'i', 'ு': 'u', 'ூ': 'u',
+    'ெ': 'e', 'ே': 'e', 'ை': 'ai', 'ொ': 'o', 'ோ': 'o', 'ௌ': 'au'
+  };
+
+  const words = text.trim().split(/\s+/);
+  const outWords = [];
+
+  for (const word of words) {
+    let out = '';
+    let i = 0;
+    while (i < word.length) {
+      const char = word[i];
+      const nextChar = word[i + 1];
+
+      if (independentVowels[char]) {
+        out += independentVowels[char];
+        i++;
+        continue;
+      }
+
+      if (consonantRoots[char]) {
+        const root = consonantRoots[char];
+        if (nextChar === '்') {
+          out += root;
+          i += 2;
+        } else if (nextChar && vowelSigns[nextChar]) {
+          out += root + vowelSigns[nextChar];
+          i += 2;
+        } else {
+          out += root + 'a';
+          i++;
+        }
+        continue;
+      }
+
+      out += char;
+      i++;
+    }
+
+    if (out) {
+      outWords.push(out.charAt(0).toUpperCase() + out.slice(1));
+    }
   }
-  for (const [k, v] of Object.entries(charMap)) {
-    res = res.replaceAll(k, v);
-  }
-  res = res.replaceAll('்', '');
-  return res.split(/\s+/).map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ');
+
+  return outWords.join(' ');
 }
 
 /**
  * Phonetic Devanagari to Latin transliterator for unmapped terms.
  */
 function transliterateDevanagariToLatin(text) {
-  const charMap = {
+  if (!text) return '';
+
+  const independentVowels = {
     'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri',
-    'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+    'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au'
+  };
+
+  const consonantRoots = {
     'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng',
     'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
     'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
     'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
     'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
-    'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
-    'ा': 'a', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', '्': ''
+    'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h'
   };
 
-  let res = text;
-  for (const [k, v] of Object.entries(charMap)) {
-    res = res.replaceAll(k, v);
+  const vowelSigns = {
+    'ा': 'a', 'ि': 'i', 'ी': 'i', 'ु': 'u', 'ू': 'u',
+    'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au'
+  };
+
+  const words = text.trim().split(/\s+/);
+  const outWords = [];
+
+  for (const word of words) {
+    let out = '';
+    let i = 0;
+    while (i < word.length) {
+      const char = word[i];
+      const nextChar = word[i + 1];
+
+      if (independentVowels[char]) {
+        out += independentVowels[char];
+        i++;
+        continue;
+      }
+
+      if (consonantRoots[char]) {
+        const root = consonantRoots[char];
+        if (nextChar === '्') {
+          out += root;
+          i += 2;
+        } else if (nextChar && vowelSigns[nextChar]) {
+          out += root + vowelSigns[nextChar];
+          i += 2;
+        } else {
+          out += root + 'a';
+          i++;
+        }
+        continue;
+      }
+
+      out += char;
+      i++;
+    }
+
+    if (out) {
+      outWords.push(out.charAt(0).toUpperCase() + out.slice(1));
+    }
   }
-  return res.split(/\s+/).map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ');
+
+  return outWords.join(' ');
 }
 
 /**

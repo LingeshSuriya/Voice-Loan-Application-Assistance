@@ -327,18 +327,7 @@ function buildConfirmQuestion(key, val, language) {
   };
   const names = fieldNames[language] || fieldNames['en-IN'];
   const label = names[key] || key;
-  let displayVal = val || '';
-  if (val && (key === 'loan_amount' || key === 'monthly_income')) {
-    const numStr = Number(val).toLocaleString('en-IN');
-    displayVal = language === 'ta-IN' ? `${numStr} ரூபாய்`
-      : language === 'hi-IN' ? `${numStr} रुपये`
-      : language === 'te-IN' ? `${numStr} రూపాయలు`
-      : language === 'ml-IN' ? `${numStr} രൂപ`
-      : language === 'mr-IN' ? `${numStr} रुपये`
-      : `${numStr} rupees`;
-  } else if (val && key === 'aadhaar_last4') {
-    displayVal = val;
-  }
+  const displayVal = formatSpeechValue(key, val, language);
 
   return language === 'ta-IN' ? `${label} ${displayVal}, சரியா?`
     : language === 'hi-IN' ? `${label} ${displayVal}, सही है?`
