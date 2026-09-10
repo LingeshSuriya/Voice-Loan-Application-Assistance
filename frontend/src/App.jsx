@@ -146,11 +146,32 @@ export default function App() {
   };
 
   const handleConfirmField = (key) => {
-    const val = formData[key];
-    const confirmPrompt = language === 'ta-IN'
-      ? `${key} உறுதிப்படுத்தப்பட்டது.`
-      : `${key} confirmed.`;
-    speakText(confirmPrompt, language);
+    const fieldNames = {
+      'ta-IN': { applicant_name:'பெயர்', village_or_address:'முகவரி', loan_amount:'கடன் தொகை', loan_purpose:'நோக்கம்', monthly_income:'வருமானம்', income_source:'வருமான ஆதாரம்', aadhaar_last4:'ஆதார்' },
+      'hi-IN': { applicant_name:'नाम', village_or_address:'पता', loan_amount:'लोन राशि', loan_purpose:'उद्देश्य', monthly_income:'आमदनी', income_source:'स्रोत', aadhaar_last4:'आधार' },
+    };
+    const names = fieldNames[language] || {};
+    const label = names[key] || key;
+    const confirmMsg = language === 'ta-IN' ? `${label} உறுதிப்படுத்தப்பட்டது.`
+      : language === 'hi-IN' ? `${label} सही दर्ज हो गया।`
+      : `${label} confirmed.`;
+    speakText(confirmMsg, language);
+  };
+
+  // Clear a single field and re-ask its question
+  const handleRetryField = (key) => {
+    setFormData(prev => ({ ...prev, [key]: null }));
+  };
+
+  // Reset all fields — restart entire form from question 1
+  const handleResetForm = () => {
+    setFormData({ ...DEFAULT_FORM_DATA });
+  };
+
+  // New application — reset form AND go to overview
+  const handleNewApplication = () => {
+    setFormData({ ...DEFAULT_FORM_DATA });
+    setCurrentPage(PAGES.OVERVIEW);
   };
 
   // Voice recording handlers for Voice Session Studio
@@ -442,6 +463,9 @@ export default function App() {
             formData={formData}
             onUpdateField={handleUpdateField}
             onConfirmField={handleConfirmField}
+            onRetryField={handleRetryField}
+            onResetForm={handleResetForm}
+            onNewApplication={handleNewApplication}
             onSubmitApplication={handleSubmitApplication}
             onBack={() => setCurrentPage(PAGES.OVERVIEW)}
             isRecording={isRecording}

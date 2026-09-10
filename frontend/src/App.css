@@ -1351,14 +1351,89 @@
   color: #0f172a;
 }
 
-.btn-checklist-confirm {
+/* Per-field action buttons container */
+.checklist-field-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ✓ Confirm button */
+.btn-field-confirm {
   background: #ffffff;
   border: 1px solid #bbf7d0;
   color: #0f766e;
-  padding: 4px 10px;
+  padding: 4px 9px;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
+  transition: background 0.15s;
+}
+.btn-field-confirm:hover {
+  background: #f0fdf4;
+}
+
+/* ↺ Retry field button */
+.btn-field-retry {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+.btn-field-retry:hover {
+  background: #ffedd5;
+}
+
+/* Bottom action row: Reset All + New Application */
+.checklist-bottom-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btn-reset-form {
+  flex: 1;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.btn-reset-form:hover:not(:disabled) {
+  background: #fff1f2;
+  border-color: #fda4af;
+  color: #be123c;
+}
+
+.btn-new-application {
+  flex: 1;
+  background: #f0fdfa;
+  border: 1.5px solid #99f6e4;
+  color: #0f766e;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.btn-new-application:hover:not(:disabled) {
+  background: #ccfbf1;
+  border-color: #2dd4bf;
 }
 
 .btn-submit-underwriting {

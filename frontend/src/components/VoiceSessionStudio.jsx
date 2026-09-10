@@ -320,6 +320,9 @@ export default function VoiceSessionStudio({
   formData,
   onUpdateField,
   onConfirmField,
+  onRetryField,
+  onResetForm,
+  onNewApplication,
   onSubmitApplication,
   onBack,
   isRecording,
@@ -651,27 +654,79 @@ export default function VoiceSessionStudio({
                       </div>
                     </div>
 
+                    {/* ── Per-field action buttons ── */}
                     {isFilled && (
-                      <button
-                        type="button"
-                        className="btn-checklist-confirm"
-                        onClick={() => {
-                          if (onConfirmField) onConfirmField(key);
-                          // Play voice confirmation for the field
-                          const lang = language;
-                          const confirmMsg = lang === 'ta-IN'
-                            ? `${fieldLabel} சரியாக பதிவாகியுள்ளது.`
-                            : (lang === 'hi-IN' ? `${fieldLabel} सही दर्ज हो गया।` : `${fieldLabel} confirmed.`);
-                          if (onPlayTTS) onPlayTTS(confirmMsg, lang);
-                        }}
-                        title="Confirm this field"
-                      >
-                        ✓
-                      </button>
+                      <div className="checklist-field-actions">
+                        {/* Confirm / play voice */}
+                        <button
+                          type="button"
+                          className="btn-field-confirm"
+                          onClick={() => {
+                            if (onConfirmField) onConfirmField(key);
+                            const confirmMsg = language === 'ta-IN'
+                              ? `${fieldLabel} சரியாக பதிவாகியுள்ளது.`
+                              : (language === 'hi-IN' ? `${fieldLabel} सही दर्ज हो गया।` : `${fieldLabel} confirmed.`);
+                            if (onPlayTTS) onPlayTTS(confirmMsg, language);
+                          }}
+                          title={language === 'ta-IN' ? 'குரல் உறுதிப்படுத்து' : language === 'hi-IN' ? 'पुष्टि करें' : 'Confirm field'}
+                        >
+                          ✓
+                        </button>
+                        {/* Retry / re-record just this field */}
+                        <button
+                          type="button"
+                          className="btn-field-retry"
+                          onClick={() => {
+                            if (onRetryField) onRetryField(key);
+                          }}
+                          title={language === 'ta-IN' ? 'இந்த கேள்வியை மீண்டும் பதிவு செய்' : language === 'hi-IN' ? 'इस फील्ड को फिर से रिकॉर्ड करें' : 'Re-record this field'}
+                        >
+                          ↺
+                        </button>
+                      </div>
                     )}
                   </div>
                 );
               })}
+            </div>
+
+            {/* ── Bottom Action Row: Reset + New Application ── */}
+            <div className="checklist-bottom-actions">
+              <button
+                type="button"
+                className="btn-reset-form"
+                onClick={() => { if (onResetForm) onResetForm(); }}
+                title={language === 'ta-IN' ? 'அனைத்து தகவல்களையும் அழித்து மீண்டும் தொடங்கு' : language === 'hi-IN' ? 'सभी जानकारी हटाएं और फिर से शुरू करें' : 'Clear all and restart from field 1'}
+                disabled={isSubmitting}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>
+                  {language === 'ta-IN' ? 'மீண்டும் நிரப்பு'
+                    : language === 'hi-IN' ? 'फिर से भरें'
+                    : language === 'te-IN' ? 'మళ్ళీ నింపండి'
+                    : language === 'ml-IN' ? 'വീണ്ടും പൂരിപ്പിക്കൂ'
+                    : language === 'mr-IN' ? 'पुन्हा भरा'
+                    : 'Retry All'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-new-application"
+                onClick={() => { if (onNewApplication) onNewApplication(); }}
+                title={language === 'ta-IN' ? 'புதிய விண்ணப்பத்தை தொடங்கு' : 'Start a brand new application'}
+                disabled={isSubmitting}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>
+                  {language === 'ta-IN' ? 'புதிய விண்ணப்பம்'
+                    : language === 'hi-IN' ? 'नया आवेदन'
+                    : language === 'te-IN' ? 'కొత్త దరఖాస్తు'
+                    : language === 'ml-IN' ? 'പുതിയ അപേക്ഷ'
+                    : language === 'mr-IN' ? 'नवीन अर्ज'
+                    : 'New Application'}
+                </span>
+              </button>
             </div>
 
             {/* Submission CTA */}
