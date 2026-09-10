@@ -622,10 +622,12 @@ export default function App() {
             extractedData = res?.data || {};
           } catch (err) {
             console.warn('Voice intake fallback to offline regex:', err);
-            extractedData = extractFieldsOffline(spokenTranscript, language) || {};
+            const offRes = extractFieldsOffline(spokenTranscript, language);
+            extractedData = offRes?.data || {};
           }
         } else {
-          extractedData = extractFieldsOffline(spokenTranscript, language) || {};
+          const offRes = extractFieldsOffline(spokenTranscript, language);
+          extractedData = offRes?.data || {};
         }
 
         const targetField = pendingConfirmField || FIELD_ORDER.find(k => !formData[k] || !confirmedFields.includes(k)) || 'applicant_name';

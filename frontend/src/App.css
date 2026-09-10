@@ -2375,14 +2375,21 @@
    10. PRINT MEDIA STYLES (Clean PDF/Paper Export)
    ========================================================================== */
 @media print {
-  /* Hide all app chrome, buttons, headers and backdrop */
-  body * {
-    visibility: hidden !important;
+  /* Reset body and html background */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
+  /* Hide app chrome, navbar, action buttons, and non-printable elements */
   .voiceloan-navbar,
   .no-print,
-  .whatsapp-modal-backdrop,
+  .whatsapp-top-bar,
+  .doc-tabs-bar,
+  .whatsapp-chat-body,
+  .whatsapp-modal-actions,
   .btn-play-voicenote,
   .voicenote-waveform-wrap,
   .whatsapp-mic-badge,
@@ -2390,16 +2397,38 @@
     display: none !important;
   }
 
-  /* Make only the printable document visible */
-  .printable-document-pane,
-  .printable-document-pane * {
-    visibility: visible !important;
+  /* Unhide modal backdrop and modal container in print mode */
+  .whatsapp-modal-backdrop {
+    position: static !important;
+    background: #ffffff !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    z-index: 1 !important;
+  }
+
+  .whatsapp-modal-container {
+    position: static !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .printable-document-pane {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -2411,11 +2440,14 @@
 
   .receipt-paper-box,
   .bank-letter-paper {
-    border: 1px solid #94a3b8 !important;
+    border: 1px solid #cbd5e1 !important;
     box-shadow: none !important;
-    padding: 24px !important;
-    margin: 0 !important;
+    padding: 20px !important;
+    margin: 0 auto !important;
     width: 100% !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    page-break-inside: avoid !important;
   }
 }
 
