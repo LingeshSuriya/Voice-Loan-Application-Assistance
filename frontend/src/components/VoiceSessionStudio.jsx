@@ -14,7 +14,7 @@ import {
   Building2,
   ChevronRight
 } from 'lucide-react';
-import { formatFieldValue, formatCurrency } from '../utils/formatters';
+import { formatFieldValue, formatCurrency, formatSpeechValue } from '../utils/formatters';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FIELD ORDER - the conversation progresses through these in sequence
