@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatFieldValue, formatCurrency } from '../utils/formatters';
 import {
   User,
   MapPin,
@@ -103,8 +104,8 @@ export default function FieldConfirmCard({
 
   // Standard confirmation question
   const formattedValue = fieldKey.includes('amount') || fieldKey.includes('income')
-    ? (value ? `₹${Number(value).toLocaleString('en-IN')}` : '')
-    : value;
+    ? (value ? formatCurrency(value, language) : '')
+    : formatFieldValue(value);
 
   const confirmQuestion = isMissing
     ? (isEnglish

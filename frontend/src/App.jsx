@@ -34,6 +34,14 @@ import {
   getOfflineApplications,
   syncPendingApplications
 } from './services/offlineSync';
+import {
+  parseSpokenNumber,
+  formatFieldValue,
+  formatSpeechValue,
+  formatCurrency,
+  transliterateToEnglish,
+  getEnglishVariantsFE
+} from './utils/formatters';
 
 const PAGES = {
   LANDING: 'LANDING',
@@ -113,28 +121,7 @@ function buildConfirmQuestion(key, val, language) {
   const names = fieldNames[language] || fieldNames['en-IN'];
   const label = names[key] || key;
 
-  let displayVal = '';
-  if (val && typeof val === 'object') {
-    if (val.regional && val.english) {
-      displayVal = `${val.regional} (${val.english})`;
-    } else {
-      displayVal = val.regional || val.english || JSON.stringify(val);
-    }
-  } else {
-    displayVal = val || '';
-  }
-
-  if (val && (key === 'loan_amount' || key === 'monthly_income')) {
-    const numStr = Number(val).toLocaleString('en-IN');
-    displayVal = language === 'ta-IN' ? `${numStr} ரூபாய்`
-      : language === 'hi-IN' ? `${numStr} रुपये`
-      : language === 'te-IN' ? `${numStr} రూపాయలు`
-      : language === 'ml-IN' ? `${numStr} രൂപ`
-      : language === 'mr-IN' ? `${numStr} रुपये`
-      : `${numStr} rupees`;
-  } else if (val && key === 'aadhaar_last4') {
-    displayVal = val;
-  }
+  const displayVal = formatSpeechValue(key, val, language);
 
   return language === 'ta-IN' ? `${label} ${displayVal}, சரியா?`
     : language === 'hi-IN' ? `${label} ${displayVal}, सही है?`
@@ -228,33 +215,7 @@ function translateEnglishToRegional(text, language) {
   return t;
 }
 
-const ENGLISH_TRANSLITERATION_MAP = {
-  'ராகுல்': ['Rahul', 'Ragul', 'Rakul'],
-  'ராகுல': ['Rahul', 'Ragul', 'Rakul'],
-  'ரகுல்': ['Rahul', 'Ragul', 'Rakul'],
-  'சாபரி': ['Sabari', 'Sabareesh'],
-  'சபரி': ['Sabari', 'Sabareesh'],
-  'விக்னேஷ்': ['Vignesh', 'Vignes'],
-  'கடையநல்லூர்': ['Kadayanallur', 'Kadayanalur'],
-  'பாளையங்கோட்டை': ['Palayamkottai', 'Palayamkottai'],
-  'மதுரை': ['Madurai', 'Mathurai'],
-  'राहुल': ['Rahul', 'Ragul', 'Rakul'],
-  'राहुअल': ['Rahul', 'Ragul', 'Rakul'],
-  'రాహుల్': ['Rahul', 'Ragul', 'Rakul']
-};
 
-function getEnglishVariantsFE(val) {
-  if (!val || typeof val !== 'string') return [val || ''];
-  const clean = val.trim();
-  for (const [key, vars] of Object.entries(ENGLISH_TRANSLITERATION_MAP)) {
-    if (clean.includes(key) || key.includes(clean)) return vars;
-  }
-  if (/^[a-zA-Z\s]+$/.test(clean)) {
-    const base = clean.charAt(0).toUpperCase() + clean.slice(1);
-    return [base, base.endsWith('h') ? base.slice(0, -1) : base + 'h'];
-  }
-  return [clean];
-}
 
 function generateFrontendPhoneticCandidates(val, fieldName, lang) {
   if (!val) return [];
@@ -682,8 +643,8 @@ export default function App() {
             rawFieldVal = extractedData[misclassifiedKey];
           } else {
             if (targetField === 'loan_amount' || targetField === 'monthly_income') {
-              const numMatch = spokenTranscript.match(/\d+/);
-              rawFieldVal = numMatch ? parseFloat(numMatch[0]) : spokenTranscript;
+              const numParsed = parseSpokenNumber(spokenTranscript);
+              rawFieldVal = numParsed !== null ? numParsed : spokenTranscript;
             } else if (targetField === 'aadhaar_last4') {
               const digits = spokenTranscript.replace(/\D/g, '').slice(-4);
               rawFieldVal = digits || spokenTranscript;
@@ -738,12 +699,12 @@ export default function App() {
     setIsSubmitting(true);
     try {
       const payload = {
-        applicant_name: formData.applicant_name || 'Mohamed Irfan',
-        village_or_address: formData.village_or_address || 'Madurai',
-        loan_amount: formData.loan_amount || 40000,
-        loan_purpose: formData.loan_purpose || 'Agriculture',
-        monthly_income: formData.monthly_income || 20000,
-        income_source: formData.income_source || 'Farming',
+        applicant_name: formatFieldValue(formData.applicant_name) || 'Mohamed Irfan',
+        village_or_address: formatFieldValue(formData.village_or_address) || 'Madurai',
+        loan_amount: parseSpokenNumber(formData.loan_amount) || 40000,
+        loan_purpose: formatFieldValue(formData.loan_purpose) || 'Agriculture',
+        monthly_income: parseSpokenNumber(formData.monthly_income) || 20000,
+        income_source: formatFieldValue(formData.income_source) || 'Farming',
         aadhaar_last4: formData.aadhaar_last4 || '3210',
         language: language,
         user_phone: user?.phone_number || '9876543210',

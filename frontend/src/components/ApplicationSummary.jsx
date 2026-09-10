@@ -24,9 +24,11 @@ const FIELD_CONFIG = [
   { key: 'aadhaar_last4', icon: ShieldCheck, labelTa: 'ஆதார் கடைசி 4 எண்கள்', labelHi: 'आधार अंतिम 4 अंक', labelMr: 'आधार शेवटचे 4 अंक', labelEn: 'Aadhaar Last 4 Digits', isAadhaar: true },
 ];
 
+import { formatFieldValue, formatCurrency } from '../utils/formatters';
+
 export default function ApplicationSummary({
-  formData,
-  language = 'hi-IN',
+  formData = {},
+  language = 'en-IN',
   onSubmit,
   isSubmitting,
   onPlaySummary,
@@ -37,14 +39,20 @@ export default function ApplicationSummary({
   const isHindi = language === 'hi-IN';
   const isEnglish = language === 'en-IN';
 
+  const nameVal = formatFieldValue(formData.applicant_name);
+  const addrVal = formatFieldValue(formData.village_or_address);
+  const amtVal = formatCurrency(formData.loan_amount, language);
+  const purpVal = formatFieldValue(formData.loan_purpose);
+  const incVal = formatCurrency(formData.monthly_income, language);
+
   // Construct complete spoken summary
   const summaryText = isEnglish
-    ? `Your loan application is ready. Name: ${formData.applicant_name || 'Not provided'}, Address: ${formData.village_or_address || 'Not provided'}, Loan Amount: ${formData.loan_amount ? formData.loan_amount + ' rupees' : 'Not provided'}, Purpose: ${formData.loan_purpose || 'Not provided'}, Monthly Income: ${formData.monthly_income ? formData.monthly_income + ' rupees' : 'Not provided'}. Shall I submit this application to the bank?`
+    ? `Your loan application is ready. Name: ${nameVal || 'Not provided'}, Address: ${addrVal || 'Not provided'}, Loan Amount: ${amtVal || 'Not provided'}, Purpose: ${purpVal || 'Not provided'}, Monthly Income: ${incVal || 'Not provided'}. Shall I submit this application to the bank?`
     : isTamil
-    ? `உங்கள் கடன் விண்ணப்பம் தயாராக உள்ளது. பெயர்: ${formData.applicant_name || 'குறிப்பிடப்படவில்லை'}, ஊர்: ${formData.village_or_address || 'குறிப்பிடப்படவில்லை'}, கடன் தொகை: ${formData.loan_amount ? formData.loan_amount + ' ரூபாய்' : 'குறிப்பிடப்படவில்லை'}, நோக்கம்: ${formData.loan_purpose || 'குறிப்பிடப்படவில்லை'}, மாத வருமானம்: ${formData.monthly_income ? formData.monthly_income + ' ரூபாய்' : 'குறிப்பிடப்படவில்லை'}. இதை வங்கியில் சமர்ப்பிக்கலாமா?`
+    ? `உங்கள் கடன் விண்ணப்பம் தயாராக உள்ளது. பெயர்: ${nameVal || 'குறிப்பிடப்படவில்லை'}, ஊர்: ${addrVal || 'குறிப்பிடப்படவில்லை'}, கடன் தொகை: ${amtVal || 'குறிப்பிடப்படவில்லை'}, நோக்கம்: ${purpVal || 'குறிப்பிடப்படவில்லை'}, மாத வருமானம்: ${incVal || 'குறிப்பிடப்படவில்லை'}. இதை வங்கியில் சமர்ப்பிக்கலாமா?`
     : isHindi
-    ? `आपका आवेदन तैयार है। नाम: ${formData.applicant_name || 'अज्ञात'}, गाँव: ${formData.village_or_address || 'अज्ञात'}, लोन राशि: ${formData.loan_amount ? formData.loan_amount + ' रुपये' : 'अज्ञात'}, उद्देश्य: ${formData.loan_purpose || 'अज्ञात'}, मासिक कमाई: ${formData.monthly_income ? formData.monthly_income + ' रुपये' : 'अज्ञात'}। क्या मैं इसे जमा कर दूँ?`
-    : `तुमचा अर्ज तयार आहे. नाव: ${formData.applicant_name || 'अज्ञात'}, गाव: ${formData.village_or_address || 'अज्ञात'}, कर्ज रक्कम: ${formData.loan_amount ? formData.loan_amount + ' रुपये' : 'अज्ञात'}, कारण: ${formData.loan_purpose || 'अज्ञात'}, मासिक उत्पन्न: ${formData.monthly_income ? formData.monthly_income + ' रुपये' : 'अज्ञात'}। मी हा अर्ज जमा करू का?`;
+    ? `आपका आवेदन तैयार है। नाम: ${nameVal || 'अज्ञात'}, गाँव: ${addrVal || 'अज्ञात'}, लोन राशि: ${amtVal || 'अज्ञात'}, उद्देश्य: ${purpVal || 'अज्ञात'}, मासिक कमाई: ${incVal || 'अज्ञात'}। क्या मैं इसे जमा कर दूँ?`
+    : `तुमचा अर्ज तयार आहे. नाव: ${nameVal || 'अज्ञात'}, गाव: ${addrVal || 'अज्ञात'}, कर्ज रक्कम: ${amtVal || 'अज्ञात'}, कारण: ${purpVal || 'अज्ञात'}, मासिक उत्पन्न: ${incVal || 'अज्ञात'}। मी हा अर्ज जमा करू का?`;
 
   useEffect(() => {
     if (onPlaySummary) {
@@ -95,9 +103,9 @@ export default function ApplicationSummary({
         {FIELD_CONFIG.map((field) => {
           const Icon = field.icon;
           const val = formData[field.key];
-          let displayVal = val || (isEnglish ? "Not provided" : isTamil ? "இல்லை" : isHindi ? "अनुपलब्ध" : "उपलब्ध नाही");
+          let displayVal = formatFieldValue(val) || (isEnglish ? "Not provided" : isTamil ? "இல்லை" : isHindi ? "अनुपलब्ध" : "उपलब्ध नाही");
           if (field.isCurrency && val) {
-            displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
+            displayVal = formatCurrency(val, language);
           } else if (field.isAadhaar && val) {
             displayVal = `XXXX-XXXX-${val}`;
           }

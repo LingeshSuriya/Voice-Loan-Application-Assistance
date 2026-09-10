@@ -14,6 +14,7 @@ import {
   Building2,
   ChevronRight
 } from 'lucide-react';
+import { formatFieldValue, formatCurrency } from '../utils/formatters';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FIELD ORDER - the conversation progresses through these in sequence
@@ -681,15 +682,9 @@ export default function VoiceSessionStudio({
                 const isCurrentField = !isConfirmed && !isPendingConfirm && key === nextField;
                 const fieldLabel = t.fields[key] || key;
 
-                let displayVal = val;
-                if (val && typeof val === 'object') {
-                  if (val.regional && val.english) {
-                    displayVal = `${val.regional} (${val.english})`;
-                  } else {
-                    displayVal = val.regional || val.english || JSON.stringify(val);
-                  }
-                } else if (val && (key === 'loan_amount' || key === 'monthly_income')) {
-                  displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
+                let displayVal = formatFieldValue(val);
+                if (val && (key === 'loan_amount' || key === 'monthly_income')) {
+                  displayVal = formatCurrency(val, language);
                 } else if (val && key === 'aadhaar_last4') {
                   displayVal = `•••• ${val}`;
                 }

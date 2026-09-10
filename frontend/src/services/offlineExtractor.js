@@ -3,6 +3,8 @@
  * Enables 100% offline structured loan extraction when no internet/backend is available.
  */
 
+import { parseSpokenNumber } from '../utils/formatters';
+
 export function extractFieldsOffline(transcript, language = 'hi-IN') {
   const text = (transcript || '').trim();
   const lower = text.toLowerCase();
@@ -59,6 +61,14 @@ export function extractFieldsOffline(transcript, language = 'hi-IN') {
     const num = parseFloat(m[1]);
     if (num >= 1000 && !foundAmounts.some(a => a.val === num)) {
       foundAmounts.push({ val: num, idx: m.index, raw: m[0] });
+    }
+  }
+
+  // If no digit-based match found, try parseSpokenNumber for regional word numbers
+  if (foundAmounts.length === 0) {
+    const parsedWordNum = parseSpokenNumber(text);
+    if (parsedWordNum !== null && parsedWordNum >= 500) {
+      foundAmounts.push({ val: parsedWordNum, idx: 0, raw: text });
     }
   }
 
