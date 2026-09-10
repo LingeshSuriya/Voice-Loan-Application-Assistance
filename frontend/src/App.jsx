@@ -147,22 +147,37 @@ export default function App() {
 
   const handleConfirmField = (key) => {
     const fieldNames = {
-      'ta-IN': { applicant_name:'முழு பெயர்', village_or_address:'முகவரி', loan_amount:'கடன் தொகை', loan_purpose:'தொழில் நோக்கம்', monthly_income:'மாத வருமானம்', income_source:'வருமான ஆதாரம்', aadhaar_last4:'ஆதார்' },
-      'hi-IN': { applicant_name:'पूरा नाम', village_or_address:'पता', loan_amount:'लोन राशि', loan_purpose:'लोन उद्देश्य', monthly_income:'मासिक आय', income_source:'आय स्रोत', aadhaar_last4:'आधार' },
+      'ta-IN': { applicant_name:'உங்கள் பெயர்', village_or_address:'உங்கள் முகவரி', loan_amount:'கடன் தொகை', loan_purpose:'கடன் நோக்கம்', monthly_income:'மாத வருமானம்', income_source:'வருமான ஆதாரம்', aadhaar_last4:'ஆதார் எண்' },
+      'hi-IN': { applicant_name:'आपका नाम', village_or_address:'आपका पता', loan_amount:'लोन राशि', loan_purpose:'लोन उद्देश्य', monthly_income:'मासिक आय', income_source:'आय का स्रोत', aadhaar_last4:'आधार नंबर' },
+      'te-IN': { applicant_name:'మీ పేరు', village_or_address:'మీ చిరునామా', loan_amount:'లోన్ మొత్తం', loan_purpose:'లోన్ ఉద్దేశం', monthly_income:'నెలవారీ ఆదాయం', income_source:'ఆదాయ వనరు', aadhaar_last4:'ఆధార్ సంఖ్య' },
+      'ml-IN': { applicant_name:'നിങ്ങളുടെ പേര്', village_or_address:'നിങ്ങളുടെ വിലാസം', loan_amount:'ലോൺ തുക', loan_purpose:'ലോൺ ഉദ്ദേശ്യം', monthly_income:'മാസ വരുമാനം', income_source:'വരുമാന ഉറവിടം', aadhaar_last4:'ആധാർ നമ്പർ' },
+      'mr-IN': { applicant_name:'तुमचे नाव', village_or_address:'तुमचा पत्ता', loan_amount:'कर्ज रक्कम', loan_purpose:'कर्ज उद्देश', monthly_income:'मासिक उत्पन्न', income_source:'उत्पन्न स्रोत', aadhaar_last4:'आधार क्रमांक' },
+      'en-IN': { applicant_name:'Your name is', village_or_address:'Your address is', loan_amount:'Loan amount is', loan_purpose:'Loan purpose is', monthly_income:'Monthly income is', income_source:'Income source is', aadhaar_last4:'Aadhaar last 4 digits are' },
     };
-    const names = fieldNames[language] || {};
+    const names = fieldNames[language] || fieldNames['en-IN'];
     const label = names[key] || key;
     const val = formData[key];
     let displayVal = val || '';
     if (val && (key === 'loan_amount' || key === 'monthly_income')) {
-      displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
+      const numStr = Number(val).toLocaleString('en-IN');
+      displayVal = language === 'ta-IN' ? `${numStr} ரூபாய்`
+        : language === 'hi-IN' ? `${numStr} रुपये`
+        : language === 'te-IN' ? `${numStr} రూపాయలు`
+        : language === 'ml-IN' ? `${numStr} രൂപ`
+        : language === 'mr-IN' ? `${numStr} रुपये`
+        : `${numStr} rupees`;
     } else if (val && key === 'aadhaar_last4') {
-      displayVal = `கடைசி 4 எண்கள் ${val}`;
+      displayVal = val;
     }
-    const confirmMsg = language === 'ta-IN' ? `${label} ${displayVal} சரியாக பதிவாகியுள்ளது.`
-      : language === 'hi-IN' ? `${label} ${displayVal} सही दर्ज हो गया।`
-      : `${label} ${displayVal} confirmed.`;
-    speakText(confirmMsg, language);
+
+    const confirmQuestion = language === 'ta-IN' ? `${label} ${displayVal}, சரியா?`
+      : language === 'hi-IN' ? `${label} ${displayVal}, सही है?`
+      : language === 'te-IN' ? `${label} ${displayVal}, సరియేనా?`
+      : language === 'ml-IN' ? `${label} ${displayVal}, ശരിയല്ലേ?`
+      : language === 'mr-IN' ? `${label} ${displayVal}, बरोबर आहे का?`
+      : `${label} ${displayVal}, right?`;
+
+    speakText(confirmQuestion, language);
   };
 
   // Clear a single field and re-ask its question
