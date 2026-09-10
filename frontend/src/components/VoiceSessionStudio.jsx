@@ -315,9 +315,43 @@ function parseTypedTextToField(txt, formData) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
+function buildConfirmQuestion(key, val, language) {
+  const fieldNames = {
+    'ta-IN': { applicant_name:'உங்கள் பெயர்', village_or_address:'உங்கள் முகவரி', loan_amount:'கடன் தொகை', loan_purpose:'கடன் நோக்கம்', monthly_income:'மாத வருமானம்', income_source:'வருமான ஆதாரம்', aadhaar_last4:'ஆதார் எண்' },
+    'hi-IN': { applicant_name:'आपका नाम', village_or_address:'आपका पता', loan_amount:'लोन राशि', loan_purpose:'लोन उद्देश्य', monthly_income:'मासिक आय', income_source:'आय का स्रोत', aadhaar_last4:'आधार नंबर' },
+    'te-IN': { applicant_name:'మీ పేరు', village_or_address:'మీ చిరునామా', loan_amount:'లోన్ మొత్తం', loan_purpose:'లోన్ ఉద్దేశం', monthly_income:'నెలవారీ ఆదాయం', income_source:'ఆదాయ వనరు', aadhaar_last4:'ఆధార్ సంఖ్య' },
+    'ml-IN': { applicant_name:'നിങ്ങളുടെ പേര്', village_or_address:'നിങ്ങളുടെ വിലാസം', loan_amount:'ലോൺ തുക', loan_purpose:'ലോൺ ഉദ്ദേശ്യം', monthly_income:'മാസ വരുമാനം', income_source:'വരുമാന ഉറവിടം', aadhaar_last4:'ആധാർ നമ്പർ' },
+    'mr-IN': { applicant_name:'तुमचे नाव', village_or_address:'तुमचा पत्ता', loan_amount:'कर्ज रक्कम', loan_purpose:'कर्ज उद्देश', monthly_income:'मासिक उत्पन्न', income_source:'उत्पन्न स्रोत', aadhaar_last4:'आधार क्रमांक' },
+    'en-IN': { applicant_name:'Your name is', village_or_address:'Your address is', loan_amount:'Loan amount is', loan_purpose:'Loan purpose is', monthly_income:'Monthly income is', income_source:'Income source is', aadhaar_last4:'Aadhaar last 4 digits are' },
+  };
+  const names = fieldNames[language] || fieldNames['en-IN'];
+  const label = names[key] || key;
+  let displayVal = val || '';
+  if (val && (key === 'loan_amount' || key === 'monthly_income')) {
+    const numStr = Number(val).toLocaleString('en-IN');
+    displayVal = language === 'ta-IN' ? `${numStr} ரூபாய்`
+      : language === 'hi-IN' ? `${numStr} रुपये`
+      : language === 'te-IN' ? `${numStr} రూపాయలు`
+      : language === 'ml-IN' ? `${numStr} രൂപ`
+      : language === 'mr-IN' ? `${numStr} रुपये`
+      : `${numStr} rupees`;
+  } else if (val && key === 'aadhaar_last4') {
+    displayVal = val;
+  }
+
+  return language === 'ta-IN' ? `${label} ${displayVal}, சரியா?`
+    : language === 'hi-IN' ? `${label} ${displayVal}, सही है?`
+    : language === 'te-IN' ? `${label} ${displayVal}, సరియేనా?`
+    : language === 'ml-IN' ? `${label} ${displayVal}, ശരിയല്ലേ?`
+    : language === 'mr-IN' ? `${label} ${displayVal}, बरोबर आहे का?`
+    : `${label} ${displayVal}, right?`;
+}
+
 export default function VoiceSessionStudio({
   language = 'ta-IN',
   formData,
+  confirmedFields = [],
+  pendingConfirmField = null,
   onUpdateField,
   onConfirmField,
   onRetryField,
@@ -338,28 +372,25 @@ export default function VoiceSessionStudio({
   const [manualText, setManualText] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
   const [activePrompt, setActivePrompt] = useState('');
-  const prevNextFieldRef = useRef(null);
   const hasInitialized = useRef(false);
 
   const t = LOCALIZED_COPY[language] || LOCALIZED_COPY['en-IN'];
 
   const fieldKeys = FIELD_KEYS;
-  const filledCount = fieldKeys.filter(k => Boolean(formData[k])).length;
-  const progressPct = Math.round((filledCount / fieldKeys.length) * 100);
-  const nextField = getNextUnfilledField(formData);
-  const allFilled = nextField === null;
+  const confirmedCount = confirmedFields.length;
+  const progressPct = Math.round((confirmedCount / fieldKeys.length) * 100);
+  const nextField = fieldKeys.find(k => !formData[k] || !confirmedFields.includes(k)) || null;
+  const allFilled = confirmedFields.length === fieldKeys.length;
 
   // ─── Initial greeting: play the first unanswered field's question on mount ──
   useEffect(() => {
     if (!hasInitialized.current) {
-      hasInitialized.current = false; // reset on language change
+      hasInitialized.current = false;
     }
-    const currentNext = getNextUnfilledField(formData);
+    const currentNext = fieldKeys.find(k => !formData[k] || !confirmedFields.includes(k)) || 'applicant_name';
     const question = getQuestionForField(currentNext, language);
     setActivePrompt(question);
-    prevNextFieldRef.current = currentNext;
 
-    // Small delay so TTS doesn't fire twice on initial render
     const timer = setTimeout(() => {
       if (onPlayTTS) onPlayTTS(question, language);
       hasInitialized.current = true;
@@ -368,26 +399,21 @@ export default function VoiceSessionStudio({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
-  // ─── When formData changes: detect newly filled field → ask the NEXT question ──
+  // ─── Update active prompt when pendingConfirmField or nextField changes ──
   useEffect(() => {
-    if (!hasInitialized.current) return; // don't fire before initial greeting is done
+    if (!hasInitialized.current) return;
 
-    const currentNext = getNextUnfilledField(formData);
-
-    // If the next unfilled field changed → a field was just filled
-    if (currentNext !== prevNextFieldRef.current) {
-      prevNextFieldRef.current = currentNext;
-      const question = getQuestionForField(currentNext, language);
+    if (pendingConfirmField && formData[pendingConfirmField]) {
+      const confirmQ = buildConfirmQuestion(pendingConfirmField, formData[pendingConfirmField], language);
+      setActivePrompt(confirmQ);
+    } else if (nextField) {
+      const question = getQuestionForField(nextField, language);
       setActivePrompt(question);
-
-      // Small delay so TTS doesn't stack on the previous utterance
-      const timer = setTimeout(() => {
-        if (onPlayTTS) onPlayTTS(question, language);
-      }, 600);
-      return () => clearTimeout(timer);
+    } else {
+      const questions = FIELD_QUESTIONS[language] || FIELD_QUESTIONS['en-IN'];
+      setActivePrompt(questions.completed || 'All done!');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData]);
+  }, [pendingConfirmField, nextField, formData, language]);
 
   const handleManualSubmit = (e) => {
     e.preventDefault();
@@ -495,10 +521,13 @@ export default function VoiceSessionStudio({
               {isRecording
                 ? t.listening
                 : (isSpeaking
-                    ? (language === 'ta-IN' ? 'கேளுங்கள்...' : language === 'hi-IN' ? 'सुनिए...' : 'Listening to answer...')
-                    : (allFilled
-                        ? t.completedAll
-                        : `${t.fields[nextField] || ''} ${language === 'ta-IN' ? 'சொல்லுங்கள்' : language === 'hi-IN' ? 'बताएं' : '- speak now'}`)
+                    ? (language === 'ta-IN' ? 'கேளுங்கள்...' : language === 'hi-IN' ? 'सुनिए...' : 'Listening...')
+                    : (pendingConfirmField
+                        ? (language === 'ta-IN' ? 'ஆமாம் அல்லது இல்லை என கூறவும்' : language === 'hi-IN' ? 'हाँ या ना कहें' : 'Say Yes or No')
+                        : (allFilled
+                            ? t.completedAll
+                            : `${t.fields[nextField] || ''} ${language === 'ta-IN' ? 'சொல்லுங்கள்' : language === 'hi-IN' ? 'बताएं' : '- speak now'}`)
+                      )
                   )
               }
             </div>
@@ -560,9 +589,11 @@ export default function VoiceSessionStudio({
           {showManualInput && (
             <form onSubmit={handleManualSubmit} className="console-manual-input-form animate-fadeIn">
               <div className="text-[10px] text-slate-500 mb-1 font-semibold">
-                {nextField
-                  ? `▶ ${language === 'ta-IN' ? 'இப்போது கேட்கப்படுவது' : language === 'hi-IN' ? 'अभी पूछा जा रहा है' : 'Currently asking'}: ${t.fields[nextField] || nextField}`
-                  : (language === 'ta-IN' ? 'அனைத்தும் நிறைவடைந்தது!' : language === 'hi-IN' ? 'सब भर गया!' : 'All fields filled!')}
+                {pendingConfirmField
+                  ? `▶ ${language === 'ta-IN' ? 'உறுதிப்படுத்தல்' : 'Confirming'}: ${t.fields[pendingConfirmField]}`
+                  : (nextField
+                    ? `▶ ${language === 'ta-IN' ? 'இப்போது கேட்கப்படுவது' : language === 'hi-IN' ? 'अभी पूछा जा रहा है' : 'Currently asking'}: ${t.fields[nextField] || nextField}`
+                    : (language === 'ta-IN' ? 'அனைத்தும் நிறைவடைந்தது!' : language === 'hi-IN' ? 'सब भर गया!' : 'All fields filled!'))}
               </div>
               <input
                 type="text"
@@ -608,8 +639,9 @@ export default function VoiceSessionStudio({
             <div className="checklist-fields-stack">
               {fieldKeys.map((key) => {
                 const val = formData[key];
-                const isFilled = Boolean(val);
-                const isCurrentField = !isFilled && key === nextField;
+                const isConfirmed = confirmedFields.includes(key);
+                const isPendingConfirm = key === pendingConfirmField;
+                const isCurrentField = !isConfirmed && !isPendingConfirm && key === nextField;
                 const fieldLabel = t.fields[key] || key;
 
                 let displayVal = val;
@@ -619,18 +651,22 @@ export default function VoiceSessionStudio({
                   displayVal = `•••• ${val}`;
                 }
 
-                const waitingPlaceholder = isCurrentField
-                  ? (language === 'ta-IN' ? '← இப்போது கேட்கிறோம்' : language === 'hi-IN' ? '← अभी पूछ रहे हैं' : '← Currently asking')
-                  : (language === 'ta-IN' ? 'காத்திருக்கிறது' : language === 'hi-IN' ? 'प्रतीक्षा...' : 'Waiting...');
+                const waitingPlaceholder = isPendingConfirm
+                  ? (language === 'ta-IN' ? '← ஆமாம் / இல்லை என கூறவும்' : language === 'hi-IN' ? '← हाँ / ना कहें' : '← Say Yes or No')
+                  : isCurrentField
+                    ? (language === 'ta-IN' ? '← இப்போது கேட்கிறோம்' : language === 'hi-IN' ? '← अभी पूछ रहे हैं' : '← Currently asking')
+                    : (language === 'ta-IN' ? 'காத்திருக்கிறது' : language === 'hi-IN' ? 'प्रतीक्षा...' : 'Waiting...');
 
                 return (
                   <div
                     key={key}
-                    className={`checklist-row-item ${isFilled ? 'filled' : (isCurrentField ? 'current-field' : 'waiting')}`}
+                    className={`checklist-row-item ${isConfirmed ? 'filled' : (isPendingConfirm ? 'pending-confirm' : (isCurrentField ? 'current-field' : 'waiting'))}`}
                   >
                     <div className="checklist-status-dot">
-                      {isFilled ? (
+                      {isConfirmed ? (
                         <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+                      ) : isPendingConfirm ? (
+                        <span className="dot-confirm-pulse" />
                       ) : isCurrentField ? (
                         <span className="dot-current-pulse" />
                       ) : (
@@ -639,15 +675,16 @@ export default function VoiceSessionStudio({
                     </div>
 
                     <div className="checklist-row-content">
-                      <div className={`checklist-row-label ${isCurrentField ? 'text-emerald-700 font-bold' : ''}`}>
+                      <div className={`checklist-row-label ${isPendingConfirm ? 'text-amber-700 font-bold' : (isCurrentField ? 'text-emerald-700 font-bold' : '')}`}>
                         {fieldLabel}
+                        {isPendingConfirm && <span className="ml-1 text-[10px] text-amber-600 font-bold animate-pulse">▲ CONFIRM (ஆமாம் / இல்லை)</span>}
                         {isCurrentField && <span className="ml-1 text-[10px] text-emerald-600 animate-pulse">▲ ASKING NOW</span>}
                       </div>
                       <div className="checklist-row-value">
-                        {isFilled ? (
+                        {val ? (
                           <span className="text-slate-900 font-semibold">{displayVal}</span>
                         ) : (
-                          <span className={`font-normal ${isCurrentField ? 'text-emerald-600 font-semibold' : 'text-slate-400'}`}>
+                          <span className={`font-normal ${isPendingConfirm ? 'text-amber-600 font-semibold' : (isCurrentField ? 'text-emerald-600 font-semibold' : 'text-slate-400')}`}>
                             {waitingPlaceholder}
                           </span>
                         )}
@@ -655,18 +692,18 @@ export default function VoiceSessionStudio({
                     </div>
 
                     {/* ── Per-field action buttons ── */}
-                    {isFilled && (
+                    {val && (
                       <div className="checklist-field-actions">
-                        {/* Confirm / play voice */}
+                        {/* Confirm button */}
                         <button
                           type="button"
-                          className="btn-field-confirm"
+                          className={`btn-field-confirm ${isPendingConfirm ? 'pulse-btn' : ''}`}
                           onClick={() => {
                             if (onConfirmField) onConfirmField(key);
                           }}
-                          title={language === 'ta-IN' ? 'குரல் உறுதிப்படுத்து' : language === 'hi-IN' ? 'पुष्टि करें' : 'Confirm field'}
+                          title={language === 'ta-IN' ? 'உறுதிப்படுத்து (ஆமாம்)' : 'Confirm (Yes)'}
                         >
-                          ✓
+                          ✓ {isPendingConfirm ? (language === 'ta-IN' ? 'ஆமாம்' : 'Yes') : ''}
                         </button>
                         {/* Retry / re-record just this field */}
                         <button
@@ -675,9 +712,9 @@ export default function VoiceSessionStudio({
                           onClick={() => {
                             if (onRetryField) onRetryField(key);
                           }}
-                          title={language === 'ta-IN' ? 'இந்த கேள்வியை மீண்டும் பதிவு செய்' : language === 'hi-IN' ? 'इस फील्ड को फिर से रिकॉर्ड करें' : 'Re-record this field'}
+                          title={language === 'ta-IN' ? 'மாற்று / மீண்டும் பதிவு செய் (இல்லை)' : 'Re-record (No)'}
                         >
-                          ↺
+                          ↺ {isPendingConfirm ? (language === 'ta-IN' ? 'இல்லை' : 'No') : ''}
                         </button>
                       </div>
                     )}

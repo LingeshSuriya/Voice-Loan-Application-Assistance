@@ -53,10 +53,120 @@ const DEFAULT_FORM_DATA = {
   aadhaar_last4: null,
 };
 
+const FIELD_ORDER = [
+  'applicant_name',
+  'village_or_address',
+  'loan_amount',
+  'loan_purpose',
+  'monthly_income',
+  'income_source',
+  'aadhaar_last4'
+];
+
+const FIELD_QUESTIONS = {
+  'ta-IN': {
+    applicant_name:     'வணக்கம்! உங்கள் கடன் விண்ணப்பத்திற்கு நான் உதவுகிறேன். முதலில், உங்கள் முழு பெயர் என்ன?',
+    village_or_address: 'நன்றி! நீங்கள் எந்த கிராமம் அல்லது நகரில் வசிக்கிறீர்கள்?',
+    loan_amount:        'சரி! நீங்கள் எவ்வளவு தொகை கடனாக வேண்டும்? (உதாரணம்: ஐம்பதாயிரம் ரூபாய்)',
+    loan_purpose:       'இந்த கடன் எந்த தொழில் அல்லது நோக்கத்திற்காக தேவை?',
+    monthly_income:     'சரி! உங்கள் தற்போதைய மாத வருமானம் எவ்வளவு?',
+    income_source:      'நீங்கள் என்ன தொழில் செய்கிறீர்கள் அல்லது வருமானம் எங்கிருந்து வருகிறது?',
+    aadhaar_last4:      'கிட்டத்தட்ட முடிந்தது! உங்கள் ஆதார் அட்டையின் கடைசி 4 இலக்கங்கள் என்ன?',
+    completed:          'மிக்க நன்றி! அனைத்து விவரங்களும் பதிவாகியுள்ளன. இப்போது மதிப்பீட்டிற்கு விண்ணப்பிக்கலாம்.'
+  },
+  'hi-IN': {
+    applicant_name:     'नमस्ते! मैं आपके लोन आवेदन में सहायता करूँगा। सबसे पहले, आपका पूरा नाम क्या है?',
+    village_or_address: 'धन्यवाद! आप किस गाँव या शहर में रहते हैं?',
+    loan_amount:        'ठीक है! आप कितनी लोन राशि चाहते हैं? (उदाहरण: पचास हजार रुपये)',
+    loan_purpose:       'यह लोन किस काम या व्यापार के लिए चाहिए?',
+    monthly_income:     'अच्छा! आपकी वर्तमान मासिक कमाई कितनी है?',
+    income_source:      'आप कौन सा काम करते हैं या आपकी आमदनी का स्रोत क्या है?',
+    aadhaar_last4:      'लगभग हो गया! आपके आधार कार्ड के आखिरी 4 अंक क्या हैं?',
+    completed:          'बहुत धन्यवाद! सभी जानकारी दर्ज हो गई है। अब आप क्रेडिट मूल्यांकन के लिए आवेदन कर सकते हैं।'
+  },
+  'en-IN': {
+    applicant_name:     'Hello! I will help you with your loan application. First, what is your full name?',
+    village_or_address: 'Thank you! Which village or town do you currently live in?',
+    loan_amount:        'Got it! How much loan amount do you need? (Example: fifty thousand rupees)',
+    loan_purpose:       'What is this loan for? Which business or purpose?',
+    monthly_income:     'Alright! What is your current monthly income?',
+    income_source:      'What is your occupation or main source of income?',
+    aadhaar_last4:      'Almost done! What are the last 4 digits of your Aadhaar card?',
+    completed:          'Thank you! All details have been recorded. You can now submit for credit evaluation.'
+  }
+};
+
+function getFieldQuestion(key, lang) {
+  const q = FIELD_QUESTIONS[lang] || FIELD_QUESTIONS['en-IN'];
+  return key ? (q[key] || '') : (q.completed || '');
+}
+
+function buildConfirmQuestion(key, val, language) {
+  const fieldNames = {
+    'ta-IN': { applicant_name:'உங்கள் பெயர்', village_or_address:'உங்கள் முகவரி', loan_amount:'கடன் தொகை', loan_purpose:'கடன் நோக்கம்', monthly_income:'மாத வருமானம்', income_source:'வருமான ஆதாரம்', aadhaar_last4:'ஆதார் எண்' },
+    'hi-IN': { applicant_name:'आपका नाम', village_or_address:'आपका पता', loan_amount:'लोन राशि', loan_purpose:'लोन उद्देश्य', monthly_income:'मासिक आय', income_source:'आय का स्रोत', aadhaar_last4:'आधार नंबर' },
+    'te-IN': { applicant_name:'మీ పేరు', village_or_address:'మీ చిరునామా', loan_amount:'లోన్ మొత్తం', loan_purpose:'లోన్ ఉద్దేశం', monthly_income:'నెలవారీ ఆదాయం', income_source:'ఆదాయ వనరు', aadhaar_last4:'ఆధార్ సంఖ్య' },
+    'ml-IN': { applicant_name:'നിങ്ങളുടെ പേര്', village_or_address:'നിങ്ങളുടെ വിലാസം', loan_amount:'ലോൺ തുക', loan_purpose:'ലോൺ ഉദ്ദേശ്യം', monthly_income:'മാസ വരുമാനം', income_source:'വരുമാന ഉറവിടം', aadhaar_last4:'ആധാർ നമ്പർ' },
+    'mr-IN': { applicant_name:'तुमचे नाव', village_or_address:'तुमचा पत्ता', loan_amount:'कर्ज रक्कम', loan_purpose:'कर्ज उद्देश', monthly_income:'मासिक उत्पन्न', income_source:'उत्पन्न स्रोत', aadhaar_last4:'आधार क्रमांक' },
+    'en-IN': { applicant_name:'Your name is', village_or_address:'Your address is', loan_amount:'Loan amount is', loan_purpose:'Loan purpose is', monthly_income:'Monthly income is', income_source:'Income source is', aadhaar_last4:'Aadhaar last 4 digits are' },
+  };
+  const names = fieldNames[language] || fieldNames['en-IN'];
+  const label = names[key] || key;
+  let displayVal = val || '';
+  if (val && (key === 'loan_amount' || key === 'monthly_income')) {
+    const numStr = Number(val).toLocaleString('en-IN');
+    displayVal = language === 'ta-IN' ? `${numStr} ரூபாய்`
+      : language === 'hi-IN' ? `${numStr} रुपये`
+      : language === 'te-IN' ? `${numStr} రూపాయలు`
+      : language === 'ml-IN' ? `${numStr} രൂപ`
+      : language === 'mr-IN' ? `${numStr} रुपये`
+      : `${numStr} rupees`;
+  } else if (val && key === 'aadhaar_last4') {
+    displayVal = val;
+  }
+
+  return language === 'ta-IN' ? `${label} ${displayVal}, சரியா?`
+    : language === 'hi-IN' ? `${label} ${displayVal}, सही है?`
+    : language === 'te-IN' ? `${label} ${displayVal}, సరియేనా?`
+    : language === 'ml-IN' ? `${label} ${displayVal}, ശരിയല്ലേ?`
+    : language === 'mr-IN' ? `${label} ${displayVal}, बरोबर आहे का?`
+    : `${label} ${displayVal}, right?`;
+}
+
+function isPositiveConfirmation(text) {
+  if (!text) return false;
+  const t = text.toLowerCase().trim();
+  const positiveWords = [
+    'ஆமாம்', 'ஆம்', 'சரி', 'சரியா', 'அப்படித்தான்', 'உண்மை', 'ஓகே', 'நன்றி', 'அதேதான்', 'சரியாக',
+    'हाँ', 'हा', 'सही', 'जी', 'ठीक', 'अरे हाँ', 'हाँजी',
+    'అవును', 'సరే', 'అవునండి',
+    'അതെ', 'ശരി',
+    'होय', 'हो', 'बरोबर',
+    'yes', 'yeah', 'yep', 'correct', 'right', 'ok', 'okay', 'sure', 'true'
+  ];
+  return positiveWords.some(w => t.includes(w));
+}
+
+function isNegativeConfirmation(text) {
+  if (!text) return false;
+  const t = text.toLowerCase().trim();
+  const negativeWords = [
+    'இல்லை', 'தவறு', 'வேண்டாம்', 'மாற்று', 'பிழை', 'இல்ல',
+    'नहीं', 'ना', 'गलत', 'नाहीं',
+    'కాదు', 'లేదు',
+    'അല്ല', 'ഇല്ല',
+    'नाही', 'गलत',
+    'no', 'nope', 'wrong', 'not', 'incorrect'
+  ];
+  return negativeWords.some(w => t.includes(w));
+}
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState(PAGES.OVERVIEW);
   const [language, setLanguage] = useState('ta-IN');
   const [formData, setFormData] = useState({ ...DEFAULT_FORM_DATA });
+  const [confirmedFields, setConfirmedFields] = useState([]);
+  const [pendingConfirmField, setPendingConfirmField] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeSanctionModal, setActiveSanctionModal] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -130,7 +240,7 @@ export default function App() {
   };
 
   const handleFillDemoProfile = () => {
-    setFormData({
+    const demo = {
       applicant_name: language === 'ta-IN' ? 'முகமது இர்பான் (Mohamed Irfan)' : 'Mohamed Irfan',
       village_or_address: language === 'ta-IN' ? 'மதுரை (Madurai)' : 'Madurai, TN',
       loan_amount: 50000,
@@ -138,61 +248,58 @@ export default function App() {
       monthly_income: 25000,
       income_source: language === 'ta-IN' ? 'வணிகம் (Retail Business)' : 'Small Business',
       aadhaar_last4: '7842'
-    });
+    };
+    setFormData(demo);
+    setConfirmedFields(FIELD_ORDER);
+    setPendingConfirmField(null);
   };
 
   const handleUpdateField = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+    setPendingConfirmField(key);
+    const confirmQ = buildConfirmQuestion(key, value, language);
+    speakText(confirmQ, language);
   };
 
   const handleConfirmField = (key) => {
-    const fieldNames = {
-      'ta-IN': { applicant_name:'உங்கள் பெயர்', village_or_address:'உங்கள் முகவரி', loan_amount:'கடன் தொகை', loan_purpose:'கடன் நோக்கம்', monthly_income:'மாத வருமானம்', income_source:'வருமான ஆதாரம்', aadhaar_last4:'ஆதார் எண்' },
-      'hi-IN': { applicant_name:'आपका नाम', village_or_address:'आपका पता', loan_amount:'लोन राशि', loan_purpose:'लोन उद्देश्य', monthly_income:'मासिक आय', income_source:'आय का स्रोत', aadhaar_last4:'आधार नंबर' },
-      'te-IN': { applicant_name:'మీ పేరు', village_or_address:'మీ చిరునామా', loan_amount:'లోన్ మొత్తం', loan_purpose:'లోన్ ఉద్దేశం', monthly_income:'నెలవారీ ఆదాయం', income_source:'ఆదాయ వనరు', aadhaar_last4:'ఆధార్ సంఖ్య' },
-      'ml-IN': { applicant_name:'നിങ്ങളുടെ പേര്', village_or_address:'നിങ്ങളുടെ വിലാസം', loan_amount:'ലോൺ തുക', loan_purpose:'ലോൺ ഉദ്ദേശ്യം', monthly_income:'മാസ വരുമാനം', income_source:'വരുമാന ഉറവിടം', aadhaar_last4:'ആധാർ നമ്പർ' },
-      'mr-IN': { applicant_name:'तुमचे नाव', village_or_address:'तुमचा पत्ता', loan_amount:'कर्ज रक्कम', loan_purpose:'कर्ज उद्देश', monthly_income:'मासिक उत्पन्न', income_source:'उत्पन्न स्रोत', aadhaar_last4:'आधार क्रमांक' },
-      'en-IN': { applicant_name:'Your name is', village_or_address:'Your address is', loan_amount:'Loan amount is', loan_purpose:'Loan purpose is', monthly_income:'Monthly income is', income_source:'Income source is', aadhaar_last4:'Aadhaar last 4 digits are' },
-    };
-    const names = fieldNames[language] || fieldNames['en-IN'];
-    const label = names[key] || key;
-    const val = formData[key];
-    let displayVal = val || '';
-    if (val && (key === 'loan_amount' || key === 'monthly_income')) {
-      const numStr = Number(val).toLocaleString('en-IN');
-      displayVal = language === 'ta-IN' ? `${numStr} ரூபாய்`
-        : language === 'hi-IN' ? `${numStr} रुपये`
-        : language === 'te-IN' ? `${numStr} రూపాయలు`
-        : language === 'ml-IN' ? `${numStr} രൂപ`
-        : language === 'mr-IN' ? `${numStr} रुपये`
-        : `${numStr} rupees`;
-    } else if (val && key === 'aadhaar_last4') {
-      displayVal = val;
+    setConfirmedFields(prev => Array.from(new Set([...prev, key])));
+    setPendingConfirmField(curr => (curr === key ? null : curr));
+
+    const nextUnconfirmed = FIELD_ORDER.find(k => k !== key && (!formData[k] || !confirmedFields.includes(k)));
+    if (nextUnconfirmed && !formData[nextUnconfirmed]) {
+      const q = getFieldQuestion(nextUnconfirmed, language);
+      speakText(q, language);
+    } else {
+      const ackMsg = language === 'ta-IN' ? 'உறுதிப்படுத்தப்பட்டது!' : 'Confirmed!';
+      speakText(ackMsg, language);
     }
-
-    const confirmQuestion = language === 'ta-IN' ? `${label} ${displayVal}, சரியா?`
-      : language === 'hi-IN' ? `${label} ${displayVal}, सही है?`
-      : language === 'te-IN' ? `${label} ${displayVal}, సరియేనా?`
-      : language === 'ml-IN' ? `${label} ${displayVal}, ശരിയല്ലേ?`
-      : language === 'mr-IN' ? `${label} ${displayVal}, बरोबर आहे का?`
-      : `${label} ${displayVal}, right?`;
-
-    speakText(confirmQuestion, language);
   };
 
   // Clear a single field and re-ask its question
   const handleRetryField = (key) => {
     setFormData(prev => ({ ...prev, [key]: null }));
+    setConfirmedFields(prev => prev.filter(k => k !== key));
+    setPendingConfirmField(curr => (curr === key ? null : curr));
+
+    const q = getFieldQuestion(key, language);
+    speakText(q, language);
   };
 
   // Reset all fields — restart entire form from question 1
   const handleResetForm = () => {
     setFormData({ ...DEFAULT_FORM_DATA });
+    setConfirmedFields([]);
+    setPendingConfirmField(null);
+
+    const q = getFieldQuestion('applicant_name', language);
+    speakText(q, language);
   };
 
   // New application — reset form AND go to overview
   const handleNewApplication = () => {
     setFormData({ ...DEFAULT_FORM_DATA });
+    setConfirmedFields([]);
+    setPendingConfirmField(null);
     setCurrentPage(PAGES.OVERVIEW);
   };
 
@@ -209,75 +316,95 @@ export default function App() {
     try {
       const audioBlob = await stopRecording();
       const spokenTranscript = ((audioBlob && audioBlob.transcript) || liveTranscript || '').trim();
-      const fieldOrder = [
-        'applicant_name',
-        'village_or_address',
-        'loan_amount',
-        'loan_purpose',
-        'monthly_income',
-        'income_source',
-        'aadhaar_last4'
-      ];
 
-      if (audioBlob) {
-        if (!isOnline) {
-          const offlineExtracted = extractFieldsOffline(spokenTranscript, language) || {};
-          setFormData(prev => {
-            const targetField = fieldOrder.find(k => !prev[k]) || 'applicant_name';
-            const updated = { ...prev };
-            updated[targetField] = offlineExtracted[targetField] || spokenTranscript;
-            return updated;
-          });
-        } else {
+      // CASE 1: Currently waiting for YES / NO confirmation of a field
+      if (pendingConfirmField) {
+        const activeKey = pendingConfirmField;
+
+        if (isPositiveConfirmation(spokenTranscript)) {
+          // User said YES!
+          setConfirmedFields(prev => Array.from(new Set([...prev, activeKey])));
+          setPendingConfirmField(null);
+
+          const nextKey = FIELD_ORDER.find(k => k !== activeKey && (!formData[k] || !confirmedFields.includes(k)));
+          const confirmText = language === 'ta-IN' ? 'நன்றி!'
+            : language === 'hi-IN' ? 'धन्यवाद!'
+            : 'Thank you!';
+
+          if (nextKey) {
+            const nextQ = getFieldQuestion(nextKey, language);
+            speakText(`${confirmText} ${nextQ}`, language);
+          } else {
+            const doneMsg = language === 'ta-IN' ? 'மிக்க நன்றி! அனைத்து விவரங்களும் உறுதிப்படுத்தப்பட்டுள்ளன.'
+              : 'Thank you! All details are confirmed.';
+            speakText(doneMsg, language);
+          }
+          return;
+        }
+
+        if (isNegativeConfirmation(spokenTranscript)) {
+          // User said NO!
+          setFormData(prev => ({ ...prev, [activeKey]: null }));
+          setConfirmedFields(prev => prev.filter(k => k !== activeKey));
+          setPendingConfirmField(null);
+
+          const retryText = language === 'ta-IN' ? 'சரி, மீண்டும் சொல்லுங்கள்.'
+            : language === 'hi-IN' ? 'ठीक है, फिर से बताएं।'
+            : 'Okay, please speak again.';
+          const q = getFieldQuestion(activeKey, language);
+          speakText(`${retryText} ${q}`, language);
+          return;
+        }
+      }
+
+      // CASE 2: User spoke an answer for active question
+      if (audioBlob && spokenTranscript) {
+        let extractedData = {};
+        if (isOnline) {
           try {
             const res = await processVoiceIntake(audioBlob, language, spokenTranscript);
-            const data = res?.data || {};
-            setFormData(prev => {
-              const targetField = fieldOrder.find(k => !prev[k]) || null;
-              const updated = { ...prev };
-
-              if (targetField) {
-                if (data[targetField]) {
-                  updated[targetField] = data[targetField];
-                } else if (spokenTranscript) {
-                  // Find if LLM misclassified speech into another key
-                  const misclassifiedKey = Object.keys(data).find(k => data[k] && (k !== targetField));
-                  if (misclassifiedKey && data[misclassifiedKey] && !prev[targetField]) {
-                    updated[targetField] = data[misclassifiedKey];
-                  } else {
-                    if (targetField === 'loan_amount' || targetField === 'monthly_income') {
-                      const numMatch = spokenTranscript.match(/\d+/);
-                      updated[targetField] = numMatch ? parseFloat(numMatch[0]) : spokenTranscript;
-                    } else if (targetField === 'aadhaar_last4') {
-                      const digits = spokenTranscript.replace(/\D/g, '').slice(-4);
-                      updated[targetField] = digits || spokenTranscript;
-                    } else {
-                      updated[targetField] = spokenTranscript;
-                    }
-                  }
-                }
-              }
-
-              // Fill other empty fields if LLM returned them, but NEVER overwrite existing filled fields
-              fieldOrder.forEach(k => {
-                if (!prev[k] && data[k] && k !== targetField) {
-                  updated[k] = data[k];
-                }
-              });
-
-              return updated;
-            });
+            extractedData = res?.data || {};
           } catch (err) {
-            console.warn('Online intake fallback to offline regex:', err);
-            setFormData(prev => {
-              const targetField = fieldOrder.find(k => !prev[k]) || 'applicant_name';
-              const offlineExtracted = extractFieldsOffline(spokenTranscript, language) || {};
-              const updated = { ...prev };
-              updated[targetField] = offlineExtracted[targetField] || spokenTranscript;
-              return updated;
-            });
+            console.warn('Voice intake fallback to offline regex:', err);
+            extractedData = extractFieldsOffline(spokenTranscript, language) || {};
           }
+        } else {
+          extractedData = extractFieldsOffline(spokenTranscript, language) || {};
         }
+
+        setFormData(prev => {
+          const targetField = pendingConfirmField || FIELD_ORDER.find(k => !prev[k] || !confirmedFields.includes(k)) || 'applicant_name';
+          const updated = { ...prev };
+
+          let newValue = null;
+          if (extractedData[targetField]) {
+            newValue = extractedData[targetField];
+          } else {
+            const misclassifiedKey = Object.keys(extractedData).find(k => extractedData[k] && (k !== targetField));
+            if (misclassifiedKey && extractedData[misclassifiedKey] && !confirmedFields.includes(targetField)) {
+              newValue = extractedData[misclassifiedKey];
+            } else {
+              if (targetField === 'loan_amount' || targetField === 'monthly_income') {
+                const numMatch = spokenTranscript.match(/\d+/);
+                newValue = numMatch ? parseFloat(numMatch[0]) : spokenTranscript;
+              } else if (targetField === 'aadhaar_last4') {
+                const digits = spokenTranscript.replace(/\D/g, '').slice(-4);
+                newValue = digits || spokenTranscript;
+              } else {
+                newValue = spokenTranscript;
+              }
+            }
+          }
+
+          if (newValue) {
+            updated[targetField] = newValue;
+            setPendingConfirmField(targetField);
+            const question = buildConfirmQuestion(targetField, newValue, language);
+            speakText(question, language);
+          }
+
+          return updated;
+        });
       }
     } catch (err) {
       console.warn('Stop recording error:', err);
@@ -528,6 +655,8 @@ export default function App() {
           <VoiceSessionStudio
             language={language}
             formData={formData}
+            confirmedFields={confirmedFields}
+            pendingConfirmField={pendingConfirmField}
             onUpdateField={handleUpdateField}
             onConfirmField={handleConfirmField}
             onRetryField={handleRetryField}
