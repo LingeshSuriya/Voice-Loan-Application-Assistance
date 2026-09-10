@@ -2326,3 +2326,57 @@
     width: 100% !important;
   }
 }
+
+/* ──────────────────────────────────────────────
+   VoiceSessionStudio — Conversational Flow States
+   ────────────────────────────────────────────── */
+
+/* Prompt card glows amber when TTS is speaking */
+.console-prompt-card.speaking-glow {
+  background: #fffbeb;
+  border-color: #fde68a;
+  box-shadow: 0 0 0 3px #fef3c780;
+  transition: all 0.3s ease;
+}
+
+/* Mic button disabled while TTS plays */
+.console-mic-trigger.speaking {
+  background: #fef3c7 !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Currently-being-asked field row */
+.checklist-row-item.current-field {
+  background: #f0fdf4;
+  border-color: #6ee7b7;
+  box-shadow: 0 0 0 2px #a7f3d050;
+}
+
+/* Not-yet-reached field rows */
+.checklist-row-item.waiting {
+  background: #f8fafc;
+  border-color: #f1f5f9;
+  opacity: 0.7;
+}
+
+/* Animated dot for "currently asking" */
+.dot-current-pulse {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: currentPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes currentPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.5); opacity: 0.6; }
+}
+
+/* Submit button glow when all fields are filled */
+.btn-submit-underwriting.ready {
+  background: #059669;
+  box-shadow: 0 4px 20px #10b98140;
+}
