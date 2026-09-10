@@ -3,7 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 
 class CandidateFieldData(BaseModel):
-    candidates: List[str] = Field(default_factory=list)
+    candidates: List[Any] = Field(default_factory=list)
+    english_variants: Optional[List[str]] = Field(default_factory=list)
     confidence_note: Optional[str] = None
 
 class LoanApplicationData(BaseModel):

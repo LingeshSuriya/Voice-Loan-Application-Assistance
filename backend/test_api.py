@@ -38,9 +38,18 @@ def test_extract_full_profile():
     assert response.status_code == 200
     res_data = response.json()
     extracted = res_data["data"]
-    
-    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
-    vill_val = extracted["village_or_address"]["candidates"][0] if isinstance(extracted["village_or_address"], dict) else extracted["village_or_address"]
+    def get_cand_regional(field_data):
+        if not field_data:
+            return field_data
+        if isinstance(field_data, dict) and "candidates" in field_data:
+            cands = field_data["candidates"]
+            if cands and len(cands) > 0:
+                first = cands[0]
+                return first["regional"] if isinstance(first, dict) and "regional" in first else first
+        return field_data
+
+    name_val = get_cand_regional(extracted["applicant_name"])
+    vill_val = get_cand_regional(extracted["village_or_address"])
     
     assert name_val == "राम कुमार"
     assert vill_val == "भोजपुर"
@@ -60,8 +69,18 @@ def test_extract_partial_profile():
     assert response.status_code == 200
     extracted = response.json()["data"]
     
-    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
-    vill_val = extracted["village_or_address"]["candidates"][0] if isinstance(extracted["village_or_address"], dict) else extracted["village_or_address"]
+    def get_cand_regional(field_data):
+        if not field_data:
+            return field_data
+        if isinstance(field_data, dict) and "candidates" in field_data:
+            cands = field_data["candidates"]
+            if cands and len(cands) > 0:
+                first = cands[0]
+                return first["regional"] if isinstance(first, dict) and "regional" in first else first
+        return field_data
+
+    name_val = get_cand_regional(extracted["applicant_name"])
+    vill_val = get_cand_regional(extracted["village_or_address"])
 
     assert name_val == "मनोज यादव"
     assert vill_val == "सीतापुर"
@@ -184,7 +203,8 @@ def test_extract_custom_user_name_vignesh():
     response = client.post("/api/extract", json={"transcript": transcript, "language": "hi-IN"})
     assert response.status_code == 200
     extracted = response.json()["data"]
-    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    cand = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    name_val = cand["regional"] if isinstance(cand, dict) else cand
     assert name_val == "विग्नेश"
     assert extracted["loan_amount"] == 60000.0
 
@@ -193,7 +213,8 @@ def test_extract_custom_user_name_rajkumar():
     response = client.post("/api/extract", json={"transcript": transcript, "language": "hi-IN"})
     assert response.status_code == 200
     extracted = response.json()["data"]
-    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    cand = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    name_val = cand["regional"] if isinstance(cand, dict) else cand
     assert name_val == "राजकुमार"
     assert extracted["loan_amount"] == 75000.0
 
@@ -242,8 +263,10 @@ def test_tamil_extraction():
     res = client.post("/api/extract", json={"transcript": transcript, "language": "ta-IN"})
     assert res.status_code == 200
     extracted = res.json()["data"]
-    name_val = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
-    vill_val = extracted["village_or_address"]["candidates"][0] if isinstance(extracted["village_or_address"], dict) else extracted["village_or_address"]
+    name_cand = extracted["applicant_name"]["candidates"][0] if isinstance(extracted["applicant_name"], dict) else extracted["applicant_name"]
+    vill_cand = extracted["village_or_address"]["candidates"][0] if isinstance(extracted["village_or_address"], dict) else extracted["village_or_address"]
+    name_val = name_cand["regional"] if isinstance(name_cand, dict) else name_cand
+    vill_val = vill_cand["regional"] if isinstance(vill_cand, dict) else vill_cand
     assert name_val == "விக்னேஷ்"
     assert vill_val == "மதுரை"
     assert extracted["loan_amount"] == 60000.0

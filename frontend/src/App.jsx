@@ -112,7 +112,18 @@ function buildConfirmQuestion(key, val, language) {
   };
   const names = fieldNames[language] || fieldNames['en-IN'];
   const label = names[key] || key;
-  let displayVal = val || '';
+
+  let displayVal = '';
+  if (val && typeof val === 'object') {
+    if (val.regional && val.english) {
+      displayVal = `${val.regional} (${val.english})`;
+    } else {
+      displayVal = val.regional || val.english || JSON.stringify(val);
+    }
+  } else {
+    displayVal = val || '';
+  }
+
   if (val && (key === 'loan_amount' || key === 'monthly_income')) {
     const numStr = Number(val).toLocaleString('en-IN');
     displayVal = language === 'ta-IN' ? `${numStr} ரூபாய்`
@@ -161,6 +172,18 @@ function isNegativeConfirmation(text) {
   return negativeWords.some(w => t.includes(w));
 }
 
+function isSpellingConfirmation(text) {
+  if (!text) return false;
+  const t = text.toLowerCase().trim();
+  const spellingWords = [
+    'spelling', 'spell', 'letters', 'alphabet', 'letter', 'change spelling', 'spelling mistake', 'different spelling',
+    'எழுத்துப்பிழை', 'எழுத்து பிழை', 'ஸ்பெல்லிங்', 'எழுத்து', 'எழுத்துக்கள்', 'மாற்று',
+    'वर्तनी', 'अक्षर', 'स्पेलिंग',
+    'అక్షరాలు', 'స్పెల్లింగ్'
+  ];
+  return spellingWords.some(w => t.includes(w));
+}
+
 function translateEnglishToRegional(text, language) {
   if (!text || typeof text !== 'string') return text;
   const t = text.trim();
@@ -203,53 +226,79 @@ function translateEnglishToRegional(text, language) {
   return t;
 }
 
+const ENGLISH_TRANSLITERATION_MAP = {
+  'ராகுல்': ['Rahul', 'Ragul', 'Rakul'],
+  'ராகுல': ['Rahul', 'Ragul', 'Rakul'],
+  'ரகுல்': ['Rahul', 'Ragul', 'Rakul'],
+  'சாபரி': ['Sabari', 'Sabareesh'],
+  'சபரி': ['Sabari', 'Sabareesh'],
+  'விக்னேஷ்': ['Vignesh', 'Vignes'],
+  'கடையநல்லூர்': ['Kadayanallur', 'Kadayanalur'],
+  'பாளையங்கோட்டை': ['Palayamkottai', 'Palayamkottai'],
+  'மதுரை': ['Madurai', 'Mathurai'],
+  'राहुल': ['Rahul', 'Ragul', 'Rakul'],
+  'राहुअल': ['Rahul', 'Ragul', 'Rakul'],
+  'రాహుల్': ['Rahul', 'Ragul', 'Rakul']
+};
+
+function getEnglishVariantsFE(val) {
+  if (!val || typeof val !== 'string') return [val || ''];
+  const clean = val.trim();
+  for (const [key, vars] of Object.entries(ENGLISH_TRANSLITERATION_MAP)) {
+    if (clean.includes(key) || key.includes(clean)) return vars;
+  }
+  if (/^[a-zA-Z\s]+$/.test(clean)) {
+    const base = clean.charAt(0).toUpperCase() + clean.slice(1);
+    return [base, base.endsWith('h') ? base.slice(0, -1) : base + 'h'];
+  }
+  return [clean];
+}
+
 function generateFrontendPhoneticCandidates(val, fieldName, lang) {
-  if (!val || typeof val !== 'string') return [val];
-  const cleanVal = val.trim();
+  if (!val) return [];
+  let regVal = val;
+  if (typeof val === 'object' && val.regional) {
+    regVal = val.regional;
+  }
+  if (typeof regVal !== 'string') return [val];
+  const cleanVal = regVal.trim();
   if (!cleanVal) return [];
 
   const isTargetLang = ['ta-IN', 'hi-IN', 'te-IN'].includes(lang);
   const isTargetField = ['applicant_name', 'village_or_address'].includes(fieldName);
-  if (!isTargetLang || !isTargetField) return [cleanVal];
+  
+  const engVars = getEnglishVariantsFE(cleanVal);
+  if (!isTargetLang || !isTargetField) return [{ regional: cleanVal, english: engVars[0] }];
 
-  const candidates = [cleanVal];
+  const regionalCandidates = [cleanVal];
 
   if (lang === 'ta-IN') {
-    let alt1 = cleanVal;
-    if (alt1.includes('ச')) alt1 = alt1.replace(/ச/g, 'ஸ');
-    else if (alt1.includes('ஸ')) alt1 = alt1.replace(/ஸ/g, 'ச');
-
-    let alt2 = cleanVal;
-    if (alt2.includes('ர')) alt2 = alt2.replace(/ர/g, 'ற');
-    else if (alt2.includes('ற')) alt2 = alt2.replace(/ற/g, 'ர');
-
-    if (alt1 !== cleanVal && !candidates.includes(alt1)) candidates.push(alt1);
-    if (alt2 !== cleanVal && !candidates.includes(alt2)) candidates.push(alt2);
+    if (cleanVal.includes('ராகுல்') || cleanVal.includes('ரகுல்')) {
+      regionalCandidates.push('ராகுல்', 'ரகுல்', 'ராகூல்');
+    } else if (cleanVal.includes('ச')) regionalCandidates.push(cleanVal.replace(/ச/g, 'ஸ'));
+    else if (cleanVal.includes('ஸ')) regionalCandidates.push(cleanVal.replace(/ஸ/g, 'ச'));
   } else if (lang === 'hi-IN') {
-    let alt1 = cleanVal;
-    if (alt1.includes('श')) alt1 = alt1.replace(/श/g, 'स');
-    else if (alt1.includes('स')) alt1 = alt1.replace(/स/g, 'श');
-
-    let alt2 = cleanVal;
-    if (alt2.includes('ब')) alt2 = alt2.replace(/ब/g, 'व');
-    else if (alt2.includes('व')) alt2 = alt2.replace(/व/g, 'ब');
-
-    if (alt1 !== cleanVal && !candidates.includes(alt1)) candidates.push(alt1);
-    if (alt2 !== cleanVal && !candidates.includes(alt2)) candidates.push(alt2);
+    if (cleanVal.includes('राहुल')) {
+      regionalCandidates.push('राहुल', 'राहुअल', 'राघुल');
+    } else if (cleanVal.includes('स')) regionalCandidates.push(cleanVal.replace(/स/g, 'श'));
   } else if (lang === 'te-IN') {
-    let alt1 = cleanVal;
-    if (alt1.includes('శ')) alt1 = alt1.replace(/శ/g, 'స');
-    else if (alt1.includes('స')) alt1 = alt1.replace(/స/g, 'శ');
-
-    let alt2 = cleanVal;
-    if (alt2.includes('బ')) alt2 = alt2.replace(/బ/g, 'వ');
-    else if (alt2.includes('వ')) alt2 = alt2.replace(/వ/g, 'బ');
-
-    if (alt1 !== cleanVal && !candidates.includes(alt1)) candidates.push(alt1);
-    if (alt2 !== cleanVal && !candidates.includes(alt2)) candidates.push(alt2);
+    if (cleanVal.includes('రాహుల్')) {
+      regionalCandidates.push('రాహుల్', 'రాగుల్');
+    }
   }
 
-  return candidates.slice(0, 3);
+  const uniqueRegional = Array.from(new Set(regionalCandidates)).slice(0, 3);
+
+  const candidatePairs = [];
+  for (const r of uniqueRegional) {
+    for (const e of engVars) {
+      candidatePairs.push({ regional: r, english: e });
+      if (candidatePairs.length >= 4) break;
+    }
+    if (candidatePairs.length >= 4) break;
+  }
+
+  return candidatePairs.length > 0 ? candidatePairs : [{ regional: cleanVal, english: engVars[0] }];
 }
 
 export default function App() {
@@ -261,6 +310,7 @@ export default function App() {
   const [candidateQueue, setCandidateQueue] = useState(null); // { field, candidates, index, reRecordAttempted }
   const [unverifiedFields, setUnverifiedFields] = useState([]);
   const [reRecordAttemptedFields, setReRecordAttemptedFields] = useState({});
+  const [spellingRetryMode, setSpellingRetryMode] = useState(null); // null | 'SELECT_TYPE' | 'ENGLISH_ONLY' | 'REGIONAL_ONLY'
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeSanctionModal, setActiveSanctionModal] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -335,8 +385,8 @@ export default function App() {
 
   const handleFillDemoProfile = () => {
     const demo = {
-      applicant_name: language === 'ta-IN' ? 'முகமது இர்பான் (Mohamed Irfan)' : 'Mohamed Irfan',
-      village_or_address: language === 'ta-IN' ? 'மதுரை (Madurai)' : 'Madurai, TN',
+      applicant_name: language === 'ta-IN' ? { regional: 'முகமது இர்பான்', english: 'Mohamed Irfan' } : 'Mohamed Irfan',
+      village_or_address: language === 'ta-IN' ? { regional: 'மதுரை', english: 'Madurai' } : 'Madurai, TN',
       loan_amount: 50000,
       loan_purpose: language === 'ta-IN' ? 'மளிகை கடை (Retail Store)' : 'Retail Grocery Store',
       monthly_income: 25000,
@@ -347,12 +397,14 @@ export default function App() {
     setConfirmedFields(FIELD_ORDER);
     setPendingConfirmField(null);
     setCandidateQueue(null);
+    setSpellingRetryMode(null);
   };
 
   const handleUpdateField = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
     setPendingConfirmField(key);
     setCandidateQueue(null);
+    setSpellingRetryMode(null);
     const confirmQ = buildConfirmQuestion(key, value, language);
     speakText(confirmQ, language);
   };
@@ -361,6 +413,7 @@ export default function App() {
     setConfirmedFields(prev => Array.from(new Set([...prev, key])));
     setPendingConfirmField(curr => (curr === key ? null : curr));
     setCandidateQueue(null);
+    setSpellingRetryMode(null);
 
     const nextUnconfirmed = FIELD_ORDER.find(k => k !== key && (!formData[k] || !confirmedFields.includes(k)));
     if (nextUnconfirmed && !formData[nextUnconfirmed]) {
@@ -378,6 +431,7 @@ export default function App() {
     setConfirmedFields(prev => prev.filter(k => k !== key));
     setPendingConfirmField(curr => (curr === key ? null : curr));
     setCandidateQueue(null);
+    setSpellingRetryMode(null);
 
     const q = getFieldQuestion(key, language);
     speakText(q, language);
@@ -391,6 +445,7 @@ export default function App() {
     setCandidateQueue(null);
     setUnverifiedFields([]);
     setReRecordAttemptedFields({});
+    setSpellingRetryMode(null);
 
     const q = getFieldQuestion('applicant_name', language);
     speakText(q, language);
@@ -404,7 +459,51 @@ export default function App() {
     setCandidateQueue(null);
     setUnverifiedFields([]);
     setReRecordAttemptedFields({});
+    setSpellingRetryMode(null);
     setCurrentPage(PAGES.OVERVIEW);
+  };
+
+  const handleSpellingChangeAction = (actionType) => {
+    if (!pendingConfirmField) return;
+    const activeKey = pendingConfirmField;
+
+    if (actionType === 'TRIGGER') {
+      setSpellingRetryMode('SELECT_TYPE');
+      const askTypePrompt = language === 'ta-IN'
+        ? 'ஆங்கில எழுத்துப்பிழையா அல்லது தமிழ் எழுத்துப்பிழையா?'
+        : language === 'hi-IN'
+        ? 'क्या अंग्रेजी वर्तनी बदलना चाहते हैं या हिंदी वर्तनी?'
+        : language === 'te-IN'
+        ? 'ఇంగ్లీష్ స్పెల్లింగ్ లేదా తెలుగు స్పెల్లింగ్ మార్చాలా?'
+        : 'Is English spelling wrong or regional script spelling wrong?';
+      speakText(askTypePrompt, language);
+      return;
+    }
+
+    if (!candidateQueue || candidateQueue.field !== activeKey) return;
+    const { candidates, index } = candidateQueue;
+
+    let nextIndex = index + 1;
+    if (nextIndex >= candidates.length) nextIndex = 0;
+
+    if (actionType === 'ENGLISH') {
+      const currentEng = candidates[index]?.english;
+      const foundIdx = candidates.findIndex((c, i) => i !== index && c.english !== currentEng);
+      nextIndex = foundIdx !== -1 ? foundIdx : (index + 1) % candidates.length;
+      setSpellingRetryMode('ENGLISH_ONLY');
+    } else if (actionType === 'REGIONAL') {
+      const currentReg = candidates[index]?.regional;
+      const foundIdx = candidates.findIndex((c, i) => i !== index && c.regional !== currentReg);
+      nextIndex = foundIdx !== -1 ? foundIdx : (index + 1) % candidates.length;
+      setSpellingRetryMode('REGIONAL_ONLY');
+    }
+
+    const nextCand = candidates[nextIndex];
+    setCandidateQueue({ ...candidateQueue, index: nextIndex });
+    setFormData(prev => ({ ...prev, [activeKey]: nextCand }));
+
+    const confirmQ = buildConfirmQuestion(activeKey, nextCand, language);
+    speakText(confirmQ, language);
   };
 
   // Voice recording handlers for Voice Session Studio
@@ -421,15 +520,34 @@ export default function App() {
       const audioBlob = await stopRecording();
       const spokenTranscript = ((audioBlob && audioBlob.transcript) || liveTranscript || '').trim();
 
-      // CASE 1: Currently waiting for YES / NO confirmation of a field
+      // CASE 1: Currently waiting for YES / NO / SPELLING confirmation of a field
       if (pendingConfirmField) {
         const activeKey = pendingConfirmField;
+
+        // Check if answering "English vs Tamil/Hindi spelling" question
+        if (spellingRetryMode === 'SELECT_TYPE') {
+          const lowerSpoken = spokenTranscript.toLowerCase();
+          if (lowerSpoken.includes('english') || lowerSpoken.includes('ஆங்கிலம்') || lowerSpoken.includes('इंगलिश') || lowerSpoken.includes('இங்கிலீஷ்')) {
+            handleSpellingChangeAction('ENGLISH');
+            return;
+          } else if (lowerSpoken.includes('tamil') || lowerSpoken.includes('தமிழ்') || lowerSpoken.includes('hindi') || lowerSpoken.includes('हिंदी') || lowerSpoken.includes('telugu') || lowerSpoken.includes('తెలుగు')) {
+            handleSpellingChangeAction('REGIONAL');
+            return;
+          }
+        }
+
+        if (isSpellingConfirmation(spokenTranscript)) {
+          // User requested spelling change!
+          handleSpellingChangeAction('TRIGGER');
+          return;
+        }
 
         if (isPositiveConfirmation(spokenTranscript)) {
           // User said YES!
           setConfirmedFields(prev => Array.from(new Set([...prev, activeKey])));
           setPendingConfirmField(null);
           setCandidateQueue(null);
+          setSpellingRetryMode(null);
 
           const nextKey = FIELD_ORDER.find(k => k !== activeKey && (!formData[k] || !confirmedFields.includes(k)));
           const confirmText = language === 'ta-IN' ? 'நன்றி!'
@@ -863,6 +981,8 @@ export default function App() {
             pendingConfirmField={pendingConfirmField}
             candidateQueue={candidateQueue}
             unverifiedFields={unverifiedFields}
+            spellingRetryMode={spellingRetryMode}
+            onSpellingChangeAction={handleSpellingChangeAction}
             onUpdateField={handleUpdateField}
             onConfirmField={handleConfirmField}
             onRetryField={handleRetryField}

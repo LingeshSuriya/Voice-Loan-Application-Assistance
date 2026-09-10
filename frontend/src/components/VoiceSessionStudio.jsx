@@ -354,6 +354,8 @@ export default function VoiceSessionStudio({
   pendingConfirmField = null,
   candidateQueue = null,
   unverifiedFields = [],
+  spellingRetryMode = null,
+  onSpellingChangeAction = null,
   onUpdateField,
   onConfirmField,
   onRetryField,
@@ -553,6 +555,26 @@ export default function VoiceSessionStudio({
               <div className="text-sm font-semibold text-slate-800">
                 {activePrompt}
               </div>
+
+              {/* English vs Regional Script Spelling Choice Buttons when requested */}
+              {spellingRetryMode === 'SELECT_TYPE' && (
+                <div className="mt-2.5 flex flex-wrap gap-2 animate-fadeIn">
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all flex items-center gap-1 shadow-sm"
+                    onClick={() => onSpellingChangeAction && onSpellingChangeAction('ENGLISH')}
+                  >
+                    <span>🔤 {language === 'ta-IN' ? 'ஆங்கில எழுத்துப்பிழை (English)' : 'English Spelling'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-all flex items-center gap-1 shadow-sm"
+                    onClick={() => onSpellingChangeAction && onSpellingChangeAction('REGIONAL')}
+                  >
+                    <span>𑌅 {language === 'ta-IN' ? 'தமிழ் எழுத்துப்பிழை (Tamil Script)' : language === 'hi-IN' ? 'हिंदी वर्तनी (Hindi)' : 'Regional Script'}</span>
+                  </button>
+                </div>
+              )}
             </div>
             <button
               type="button"
@@ -660,14 +682,20 @@ export default function VoiceSessionStudio({
                 const fieldLabel = t.fields[key] || key;
 
                 let displayVal = val;
-                if (val && (key === 'loan_amount' || key === 'monthly_income')) {
+                if (val && typeof val === 'object') {
+                  if (val.regional && val.english) {
+                    displayVal = `${val.regional} (${val.english})`;
+                  } else {
+                    displayVal = val.regional || val.english || JSON.stringify(val);
+                  }
+                } else if (val && (key === 'loan_amount' || key === 'monthly_income')) {
                   displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
                 } else if (val && key === 'aadhaar_last4') {
                   displayVal = `•••• ${val}`;
                 }
 
                 const waitingPlaceholder = isPendingConfirm
-                  ? (language === 'ta-IN' ? '← ஆமாம் / இல்லை என கூறவும்' : language === 'hi-IN' ? '← हाँ / ना कहें' : '← Say Yes or No')
+                  ? (language === 'ta-IN' ? '← ஆமாம் / இல்லை / எழுத்துப்பிழை என கூறவும்' : language === 'hi-IN' ? '← हाँ / ना / वर्तनी कहें' : '← Say Yes / No / Spelling')
                   : isCurrentField
                     ? (language === 'ta-IN' ? '← இப்போது கேட்கிறோம்' : language === 'hi-IN' ? '← अभी पूछ रहे हैं' : '← Currently asking')
                     : (language === 'ta-IN' ? 'காத்திருக்கிறது' : language === 'hi-IN' ? 'प्रतीक्षा...' : 'Waiting...');
@@ -697,7 +725,7 @@ export default function VoiceSessionStudio({
                             Unverified / Review
                           </span>
                         )}
-                        {isPendingConfirm && <span className="ml-1 text-[10px] text-amber-600 font-bold animate-pulse">▲ CONFIRM (ஆமாம் / இல்லை)</span>}
+                        {isPendingConfirm && <span className="ml-1 text-[10px] text-amber-600 font-bold animate-pulse">▲ CONFIRM (ஆமாம் / இல்லை / எழுத்துப்பிழை)</span>}
                         {isCurrentField && <span className="ml-1 text-[10px] text-emerald-600 animate-pulse">▲ ASKING NOW</span>}
                       </div>
                       <div className="checklist-row-value">
@@ -725,6 +753,21 @@ export default function VoiceSessionStudio({
                         >
                           ✓ {isPendingConfirm ? (language === 'ta-IN' ? 'ஆமாம்' : 'Yes') : ''}
                         </button>
+
+                        {/* Spelling change button for target fields */}
+                        {isPendingConfirm && ['applicant_name', 'village_or_address'].includes(key) && (
+                          <button
+                            type="button"
+                            className="px-2 py-1 rounded bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition flex items-center gap-0.5 shadow-sm"
+                            onClick={() => {
+                              if (onSpellingChangeAction) onSpellingChangeAction('TRIGGER');
+                            }}
+                            title={language === 'ta-IN' ? 'எழுத்துப்பிழை மாற்று' : 'Change Spelling'}
+                          >
+                            ✎ {language === 'ta-IN' ? 'எழுத்துப்பிழை' : 'Spelling'}
+                          </button>
+                        )}
+
                         {/* Retry / re-record just this field */}
                         <button
                           type="button"
@@ -734,7 +777,7 @@ export default function VoiceSessionStudio({
                           }}
                           title={language === 'ta-IN' ? 'மாற்று / மீண்டும் பதிவு செய் (இல்லை)' : 'Re-record (No)'}
                         >
-                          ↺ {isPendingConfirm ? (language === 'ta-IN' ? 'இல்லை' : 'No') : ''}
+                          ✕ {isPendingConfirm ? (language === 'ta-IN' ? 'இல்லை' : 'No') : ''}
                         </button>
                       </div>
                     )}

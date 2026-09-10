@@ -39,6 +39,30 @@ CRITICAL RULES:
 4. For field_explanations, provide a single friendly sentence in Hindi explaining which exact words in the transcript led to extracting that field (e.g. "मैंने '50,000' को लोन राशि समझा"). If null, say "इस जानकारी का उल्लेख नहीं मिला".
 """
 
+ENGLISH_TRANSLITERATION_MAP = {
+    "ராகுல்": ["Rahul", "Ragul", "Rakul"],
+    "ராகுல": ["Rahul", "Ragul", "Rakul"],
+    "ரகுல்": ["Rahul", "Ragul", "Rakul"],
+    "राहुल": ["Rahul", "Ragul", "Rakul"],
+    "రాహుల్": ["Rahul", "Ragul", "Rakul"],
+    "சபரிசாஸ்தா": ["Sabarisastha", "Sabareesatha"],
+    "சபரி": ["Sabari", "Sabareesh"],
+    "விக்னேஷ்": ["Vignesh", "Vignes"],
+    "கடையநல்லூர்": ["Kadayanallur", "Kadayanalur"],
+    "பாளையங்கோட்டை": ["Palayamkottai", "Palayamkottai"],
+    "மதுரை": ["Madurai", "Mathurai"]
+}
+
+def get_english_variants(val: str) -> List[str]:
+    for key, variants in ENGLISH_TRANSLITERATION_MAP.items():
+        if key in val or val in key:
+            return variants
+    clean = "".join(c for c in val if c.isalnum() or c == " ").strip()
+    if clean and clean.isascii():
+        base = clean.title()
+        return [base, base + "h"] if not base.endswith("h") else [base, base[:-1]]
+    return [val]
+
 def generate_phonetic_candidates(val: str, field_name: str, lang: str) -> Optional[Dict[str, Any]]:
     if not val or not isinstance(val, str):
         return None
@@ -46,67 +70,93 @@ def generate_phonetic_candidates(val: str, field_name: str, lang: str) -> Option
     if not val:
         return None
 
-    candidates = [val]
+    regional_candidates = [val]
 
     if lang == "ta-IN":
-        if "சபரி" in val:
-            candidates.append(val.replace("சபரி", "சாபரி"))
+        if "ராகுல்" in val or "ரகுல்" in val:
+            regional_candidates = ["ராகுல்", "ரகுல்", "ராகூல்"]
+        elif "சபரி" in val:
+            regional_candidates.append(val.replace("சபரி", "சாபரி"))
         elif "சாபரி" in val:
-            candidates.append(val.replace("சாபரி", "சபரி"))
+            regional_candidates.append(val.replace("சாபரி", "சபரி"))
         elif "விக்னேஷ்" in val:
-            candidates.append(val.replace("விக்னேஷ்", "விக்னேஸ்"))
+            regional_candidates.append(val.replace("விக்னேஷ்", "விக்னேஸ்"))
         elif "கடையநல்லூர்" in val:
-            candidates.append(val.replace("கடையநல்லூர்", "காடையநல்லூர்"))
+            regional_candidates.append(val.replace("கடையநல்லூர்", "காடையநல்லூர்"))
         elif "பாளையங்கோட்டை" in val:
-            candidates.append(val.replace("பாளையங்கோட்டை", "பாளையங்கோட்ட"))
+            regional_candidates.append(val.replace("பாளையங்கோட்டை", "பாளையங்கோட்ட"))
         else:
             if val.startswith("ச"):
-                candidates.append("சா" + val[1:])
+                regional_candidates.append("சா" + val[1:])
             elif val.startswith("சா"):
-                candidates.append("ச" + val[2:])
+                regional_candidates.append("ச" + val[2:])
 
     elif lang == "hi-IN":
-        if "सबरी" in val:
-            candidates.append(val.replace("सबरी", "सबारी"))
-            candidates.append(val.replace("सबरी", "शबरी"))
+        if "राहुल" in val:
+            regional_candidates = ["राहुल", "राहुअल", "राघुल"]
+        elif "सबरी" in val:
+            regional_candidates.append(val.replace("सबरी", "सबारी"))
+            regional_candidates.append(val.replace("सबरी", "शबरी"))
         elif "मदन" in val:
-            candidates.append(val.replace("मदन", "मदान"))
-            candidates.append(val.replace("मदन", "मदनपुर"))
+            regional_candidates.append(val.replace("मदन", "मदान"))
+            regional_candidates.append(val.replace("मदन", "मदनपुर"))
         elif "सीतापुर" in val:
-            candidates.append(val.replace("सीतापुर", "सितापुर"))
+            regional_candidates.append(val.replace("सीतापुर", "सितापुर"))
         else:
             if "स" in val:
-                candidates.append(val.replace("स", "श"))
+                regional_candidates.append(val.replace("स", "श"))
 
     elif lang == "te-IN":
-        if "సబరి" in val:
-            candidates.append(val.replace("సబరి", "సాబరి"))
-            candidates.append(val.replace("సబరి", "సభరి"))
+        if "రాహుల్" in val:
+            regional_candidates = ["రాహుల్", "రాగుల్"]
+        elif "సబరి" in val:
+            regional_candidates.append(val.replace("సబరి", "సాబరి"))
+            regional_candidates.append(val.replace("సబరి", "సభరి"))
         elif "మదన" in val:
-            candidates.append(val.replace("మదన", "మదనా"))
+            regional_candidates.append(val.replace("మదన", "మదనా"))
         else:
             if "స" in val:
-                candidates.append(val.replace("స", "సా"))
+                regional_candidates.append(val.replace("స", "సా"))
 
-    unique_candidates = []
-    for c in candidates:
-        if c and c not in unique_candidates:
-            unique_candidates.append(c)
-        if len(unique_candidates) >= 3:
+    unique_regional = []
+    for c in regional_candidates:
+        if c and c not in unique_regional:
+            unique_regional.append(c)
+        if len(unique_regional) >= 3:
             break
 
-    if len(unique_candidates) > 1:
+    english_vars = get_english_variants(val)
+
+    candidates_list = []
+    for reg in unique_regional:
+        for eng in english_vars:
+            candidates_list.append({"regional": reg, "english": eng})
+            if len(candidates_list) >= 4:
+                break
+        if len(candidates_list) >= 4:
+            break
+
+    if not candidates_list:
+        candidates_list = [{"regional": val, "english": english_vars[0] if english_vars else val}]
+
+    first_reg = unique_regional[0]
+    second_reg = unique_regional[1] if len(unique_regional) > 1 else unique_regional[0]
+    first_eng = english_vars[0]
+    second_eng = english_vars[1] if len(english_vars) > 1 else english_vars[0]
+
+    if len(unique_regional) > 1 or len(english_vars) > 1:
         if lang == "ta-IN":
-            note = f"'{unique_candidates[0]}' அல்லது '{unique_candidates[1]}' என இருக்கலாம் — ஒலி ஒரே மாதிரி இருப்பதால்"
+            note = f"'{first_reg}' ({first_eng}) அல்லது '{second_reg}' ({second_eng}) என இருக்கலாம்"
         elif lang == "hi-IN":
-            note = f"'{unique_candidates[0]}' या '{unique_candidates[1]}' हो सकता है — समान उच्चारण के कारण"
+            note = f"'{first_reg}' ({first_eng}) या '{second_reg}' ({second_eng}) हो सकता है"
         else:
-            note = f"'{unique_candidates[0]}' లేదా '{unique_candidates[1]}' కావచ్చు — సమాన ఉచ్చారణ కారణంగా"
+            note = f"'{first_reg}' ({first_eng}) లేదా '{second_reg}' ({second_eng}) కావచ్చు"
     else:
         note = f"Phonetically unambiguous extraction for {val}"
 
     return {
-        "candidates": unique_candidates,
+        "candidates": candidates_list,
+        "english_variants": english_vars,
         "confidence_note": note
     }
 
