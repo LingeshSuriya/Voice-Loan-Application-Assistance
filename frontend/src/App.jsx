@@ -148,12 +148,12 @@ function isPositiveConfirmation(text) {
   if (!text) return false;
   const t = text.toLowerCase().trim();
   const positiveWords = [
-    'ஆமாம்', 'ஆம்', 'சரி', 'சரியா', 'அப்படித்தான்', 'உண்மை', 'ஓகே', 'நன்றி', 'அதேதான்', 'சரியாக',
-    'हाँ', 'हा', 'सही', 'जी', 'ठीक', 'अरे हाँ', 'हाँजी',
-    'అవును', 'సరే', 'అవునండి',
-    'അതെ', 'ശരി',
-    'होय', 'हो', 'बरोबर',
-    'yes', 'yeah', 'yep', 'correct', 'right', 'ok', 'okay', 'sure', 'true'
+    'ஆமாம்', 'ஆம்', 'சரி', 'சரியா', 'அப்படித்தான்', 'உண்மை', 'ஓகே', 'நன்றி', 'அதேதான்', 'சரியாக', 'சரிதான்',
+    'हाँ', 'हा', 'सही', 'जी', 'ठीक', 'अरे हाँ', 'हाँजी', 'बिल्कुल', 'सही है',
+    'అవును', 'సరే', 'అవునండి', 'అవును సరియే',
+    'അതെ', 'ശരി', 'തീർച്ചയായും',
+    'होय', 'हो', 'बरोबर', 'योग्य',
+    'yes', 'yeah', 'yep', 'correct', 'right', 'ok', 'okay', 'sure', 'true', 'fine', 'agree', 'confirm', 'approved', 'sounds good'
   ];
   return positiveWords.some(w => t.includes(w));
 }
@@ -162,12 +162,12 @@ function isNegativeConfirmation(text) {
   if (!text) return false;
   const t = text.toLowerCase().trim();
   const negativeWords = [
-    'இல்லை', 'தவறு', 'வேண்டாம்', 'மாற்று', 'பிழை', 'இல்ல',
-    'नहीं', 'ना', 'गलत', 'नाहीं',
-    'కాదు', 'లేదు',
-    'അല്ല', 'ഇല്ല',
-    'नाही', 'गलत',
-    'no', 'nope', 'wrong', 'not', 'incorrect'
+    'இல்லை', 'தவறு', 'வேண்டாம்', 'மாற்று', 'பிழை', 'இல்ல', 'வேண்டா', 'தவறாக',
+    'नहीं', 'ना', 'गलत', 'नाहीं', 'रद्द', 'गलत है',
+    'కాదు', 'లేదు', 'తప్పు',
+    'അല്ല', 'ഇല്ല', 'തെറ്റ്',
+    'नाही', 'गलत', 'चूक', 'नको',
+    'no', 'nope', 'wrong', 'not', 'incorrect', 'false', 'cancel', 'change', 'reject', 're-record'
   ];
   return negativeWords.some(w => t.includes(w));
 }
@@ -176,10 +176,12 @@ function isSpellingConfirmation(text) {
   if (!text) return false;
   const t = text.toLowerCase().trim();
   const spellingWords = [
-    'spelling', 'spell', 'letters', 'alphabet', 'letter', 'change spelling', 'spelling mistake', 'different spelling',
-    'எழுத்துப்பிழை', 'எழுத்து பிழை', 'ஸ்பெல்லிங்', 'எழுத்து', 'எழுத்துக்கள்', 'மாற்று',
-    'वर्तनी', 'अक्षर', 'स्पेलिंग',
-    'అక్షరాలు', 'స్పెల్లింగ్'
+    'spelling', 'spell', 'letters', 'alphabet', 'letter', 'change spelling', 'spelling mistake', 'different spelling', 'wrong spelling', 'spelling wrong', 'word spelling', 'spelled wrong', 'misspell', 'misspelled', 'transliteration',
+    'எழுத்துப்பிழை', 'எழுத்து பிழை', 'எழுத்து தவறு', 'ஸ்பெல்லிங்', 'எழுத்து', 'எழுத்துக்கள்', 'எழுத்து மாற்று', 'சொல் மாற்று',
+    'वर्तनी', 'अक्षर', 'स्पेलिंग', 'वर्तनी गलत', 'अक्षर गलत', 'नाम की स्पेलिंग',
+    'అక్షరాలు', 'స్పెల్లింగ్', 'అక్షర దోషం', 'స్పెల్లింగ్ తప్పు',
+    'അക്ഷരത്തെറ്റ്', 'സ്പെല്ലിംഗ്',
+    'अक्षर चूक', 'स्पेलिंग चूक'
   ];
   return spellingWords.some(w => t.includes(w));
 }
