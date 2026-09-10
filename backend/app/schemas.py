@@ -102,9 +102,18 @@ class ApplicationSubmitResponse(BaseModel):
     id: int
     reference_no: str
     status: str
+    risk_tier: str = "LOW"
+    verification_status: str = "VERIFIED"
+    cibil_score: Optional[int] = 720
+    alternative_score: Optional[int] = 745
     applicant_name: Optional[str]
     loan_amount: Optional[float]
+    sanctioned_amount: Optional[float] = None
+    monthly_emi: Optional[float] = None
+    tenure_months: int = 12
     voice_receipt_text: str
+    whatsapp_voice_text: Optional[str] = None
+    whatsapp_rich_card: Optional[Dict[str, Any]] = None
     audio_base64: Optional[str] = None
     disclaimer: str
     user_phone: Optional[str] = None
@@ -121,6 +130,14 @@ class ApplicationRead(BaseModel):
     income_source: Optional[str]
     aadhaar_last4: Optional[str]
     status: str
+    risk_tier: str = "LOW"
+    verification_status: str = "VERIFIED"
+    cibil_score: Optional[int] = 720
+    alternative_score: Optional[int] = 745
+    sanctioned_amount: Optional[float] = None
+    monthly_emi: Optional[float] = None
+    tenure_months: int = 12
+    whatsapp_voice_text: Optional[str] = None
     language: str
     user_phone: Optional[str] = None
     created_at: datetime

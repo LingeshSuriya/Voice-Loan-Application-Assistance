@@ -28,8 +28,16 @@ class Application(Base):
     income_source = Column(String(128), nullable=True)
     aadhaar_last4 = Column(String(4), nullable=True)
     
-    # Metadata & Status
-    status = Column(String(64), default="pending verification", nullable=False)
+    # Metadata, Underwriting & Decisioning
+    status = Column(String(64), default="LOAN_ACCEPTED", nullable=False)
+    verification_status = Column(String(64), default="VERIFIED", nullable=False)
+    risk_tier = Column(String(32), default="LOW", nullable=False)
+    cibil_score = Column(Integer, default=720, nullable=True)
+    alternative_score = Column(Integer, default=745, nullable=True)
+    sanctioned_amount = Column(Float, nullable=True)
+    monthly_emi = Column(Float, nullable=True)
+    tenure_months = Column(Integer, default=12, nullable=False)
+    whatsapp_voice_text = Column(Text, nullable=True)
     language = Column(String(16), default="hi-IN")
     transcript = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
