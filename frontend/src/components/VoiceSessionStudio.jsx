@@ -366,6 +366,7 @@ export default function VoiceSessionStudio({
   const [manualText, setManualText] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
   const [activePrompt, setActivePrompt] = useState('');
+  const [submitNotice, setSubmitNotice] = useState(null);
   const hasInitialized = useRef(false);
 
   const t = LOCALIZED_COPY[language] || LOCALIZED_COPY['en-IN'];
@@ -810,10 +811,34 @@ export default function VoiceSessionStudio({
             </div>
 
             {/* Submission CTA */}
+            {submitNotice && (
+              <div className="mb-2 p-2.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-semibold flex items-center justify-between animate-fadeIn">
+                <span>⚠️ {submitNotice}</span>
+                <button type="button" onClick={() => setSubmitNotice(null)} className="text-amber-300 hover:text-white text-xs font-bold ml-2">✕</button>
+              </div>
+            )}
+
             <button
               type="button"
-              className={`btn-submit-underwriting ${allFilled ? 'ready' : ''}`}
-              onClick={onSubmitApplication}
+              className={`btn-submit-underwriting ${allFilled ? 'ready' : 'opacity-70'}`}
+              onClick={(e) => {
+                if (!allFilled) {
+                  e.preventDefault();
+                  const missingCount = fieldKeys.length - confirmedCount;
+                  const warnMsg = language === 'ta-IN'
+                    ? `வங்கிக்கு விண்ணப்பிக்கும் முன் அனைத்து 7 விவரங்களையும் பூர்த்தி செய்ய வேண்டும். இன்னும் ${missingCount} விவரங்கள் உள்ளன.`
+                    : language === 'hi-IN'
+                    ? `बैंक में जमा करने से पहले सभी 7 विवरण पूरे और सत्यापित करें। (${missingCount} शेष)`
+                    : language === 'te-IN'
+                    ? `బ్యాంక్‌కు సమర్పించే ముందు ఇంకా ${missingCount} వివరాలను పూర్తి చేయండి.`
+                    : `Please complete and confirm all 7 loan details before submitting to bank. (${missingCount} remaining)`;
+                  setSubmitNotice(warnMsg);
+                  if (onPlayTTS) onPlayTTS(warnMsg, language);
+                  return;
+                }
+                setSubmitNotice(null);
+                onSubmitApplication();
+              }}
               disabled={isSubmitting}
             >
               <Building2 className="w-5 h-5" />
@@ -822,7 +847,7 @@ export default function VoiceSessionStudio({
                   ? (language === 'ta-IN' ? 'மதிப்பீடு செய்கிறது...' : language === 'hi-IN' ? 'मूल्यांकन हो रहा है...' : 'Evaluating Credit...')
                   : (allFilled
                       ? (language === 'ta-IN' ? 'விண்ணப்பத்தை சரிபார்த்து சமர்ப்பிக்கவும்' : language === 'hi-IN' ? 'समीक्षा करें और जमा करें' : 'Review & Submit to Bank')
-                      : (language === 'ta-IN' ? `விண்ணப்பத்தை சரிபார்க்கவும் (${confirmedCount}/7)` : `Review & Submit (${confirmedCount}/7 Confirmed)`)
+                      : (language === 'ta-IN' ? `பூர்த்தி செய்து சமர்ப்பிக்கவும் (${confirmedCount}/7)` : `Complete All Details to Submit (${confirmedCount}/7)`)
                     )
                 }
               </span>

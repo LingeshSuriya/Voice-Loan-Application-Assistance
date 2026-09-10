@@ -713,7 +713,7 @@ export default function App() {
   };
 
   const handleSubmitApplication = async () => {
-    // Validation check: require all 7 fields confirmed before allowing bank submission
+    // 1. Validation check: require all 7 fields confirmed before allowing bank submission
     const unconfirmed = FIELD_ORDER.filter(k => !formData[k] || !confirmedFields.includes(k));
     if (unconfirmed.length > 0) {
       const missingCount = unconfirmed.length;
@@ -728,7 +728,24 @@ export default function App() {
       return;
     }
 
-    // If triggered from VoiceSessionStudio and not yet on SUMMARY page, navigate to SUMMARY page first for user review!
+    // 2. Extract actual values (NO HARDCODED DEFAULT FALLBACKS!)
+    const nameVal = formatFieldValue(formData.applicant_name);
+    const addrVal = formatFieldValue(formData.village_or_address);
+    const amtVal = parseSpokenNumber(formData.loan_amount) || (typeof formData.loan_amount === 'number' ? formData.loan_amount : null);
+    const purpVal = formatFieldValue(formData.loan_purpose);
+    const incVal = parseSpokenNumber(formData.monthly_income) || (typeof formData.monthly_income === 'number' ? formData.monthly_income : null);
+    const srcVal = formatFieldValue(formData.income_source);
+    const aadhVal = formData.aadhaar_last4;
+
+    if (!nameVal || !addrVal || !amtVal || !purpVal || !incVal || !srcVal || !aadhVal) {
+      const warnMsg = language === 'ta-IN'
+        ? `விண்ணப்பத்தில் சில விவரங்கள் விடுபட்டுள்ளன. தயவுசெய்து அனைத்து 7 விவரங்களையும் பூர்த்தி செய்ய வேண்டும்.`
+        : `Some details are missing. Please complete all 7 loan details before submitting to bank.`;
+      speakText(warnMsg, language);
+      return;
+    }
+
+    // 3. If triggered from VoiceSessionStudio and not yet on SUMMARY page, navigate to SUMMARY page first for user review!
     if (currentPage !== PAGES.SUMMARY) {
       setCurrentPage(PAGES.SUMMARY);
       return;
@@ -737,13 +754,13 @@ export default function App() {
     setIsSubmitting(true);
     try {
       const payload = {
-        applicant_name: formatFieldValue(formData.applicant_name) || 'Mohamed Irfan',
-        village_or_address: formatFieldValue(formData.village_or_address) || 'Madurai',
-        loan_amount: parseSpokenNumber(formData.loan_amount) || 40000,
-        loan_purpose: formatFieldValue(formData.loan_purpose) || 'Agriculture',
-        monthly_income: parseSpokenNumber(formData.monthly_income) || 20000,
-        income_source: formatFieldValue(formData.income_source) || 'Farming',
-        aadhaar_last4: formData.aadhaar_last4 || '3210',
+        applicant_name: nameVal,
+        village_or_address: addrVal,
+        loan_amount: Number(amtVal),
+        loan_purpose: purpVal,
+        monthly_income: Number(incVal),
+        income_source: srcVal,
+        aadhaar_last4: String(aadhVal),
         language: language,
         user_phone: user?.phone_number || '9876543210',
         unverified_fields: unverifiedFields
