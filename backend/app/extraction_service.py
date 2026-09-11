@@ -1,7 +1,7 @@
 import json
 import re
 import logging
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from .config import settings
 from .schemas import LoanApplicationData, ExtractionResponse
 from .mock_data import DEMO_PROFILES
