@@ -9,7 +9,7 @@ Write-Host ""
 $BackendPort = 8001
 
 Write-Host "[1/2] Starting local FastAPI backend on port $BackendPort..." -ForegroundColor Yellow
-Start-Process -FilePath "python" -ArgumentList "-m uvicorn app.main:app --host 0.0.0.0 --port $BackendPort" -WorkingDirectory "$PSScriptRoot\backend"
+Start-Process -FilePath "python" -ArgumentList "-m uvicorn backend.app.main:app --host 0.0.0.0 --port $BackendPort" -WorkingDirectory "$PSScriptRoot"
 
 Start-Sleep -Seconds 2
 
