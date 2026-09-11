@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../services/api';
 import {
   Mic,
   ShieldCheck,
@@ -26,7 +27,7 @@ export default function LandingAuthPage({ onLoginSuccess, onGetStarted }) {
     setLoading(true);
 
     try {
-      const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const endpoint = mode === 'login' ? `${API_BASE}/auth/login` : `${API_BASE}/auth/register`;
       const payload = mode === 'login'
         ? { phone_number: phoneNumber, pin }
         : { phone_number: phoneNumber, pin, full_name: fullName, role };

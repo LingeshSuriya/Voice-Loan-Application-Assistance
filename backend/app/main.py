@@ -653,3 +653,9 @@ def get_application_voice_note(app_id: int, db: Session = Depends(get_db)):
         "audio_base64": audio_b64,
         "language": lang
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.getenv("PORT", 8001))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)

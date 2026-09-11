@@ -99,8 +99,10 @@ class SpeechService:
             except Exception as e:
                 logger.warning(f"Sarvam TTS request failed: {e}. Falling back to synthetic audio.")
 
-        # Fallback: Return None so client Web Speech API speaks the text naturally in browser
-        return None, None
+        # Fallback: Return synthetic WAV chime tone if cloud API is offline or quota exhausted
+        chime_bytes = self._generate_soft_chime_wav()
+        chime_b64 = base64.b64encode(chime_bytes).decode('utf-8')
+        return chime_b64, chime_bytes
 
     def _fallback_transcription(self, audio_bytes: bytes, language_code: str) -> str:
         """

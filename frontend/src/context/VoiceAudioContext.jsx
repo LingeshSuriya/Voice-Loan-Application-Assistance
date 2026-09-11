@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { API_BASE } from '../services/api';
 
 const VoiceAudioContext = createContext(null);
 
@@ -303,7 +304,7 @@ export function VoiceAudioProvider({ children }) {
     }
 
     // Path B: fetch from Sarvam TTS backend
-    fetch('/api/tts', {
+    fetch(`${API_BASE}/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, language }),

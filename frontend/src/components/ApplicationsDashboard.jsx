@@ -13,6 +13,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import WhatsAppVoiceNoteModal from './WhatsAppVoiceNoteModal';
+import { API_BASE } from '../services/api';
 
 export default function ApplicationsDashboard({
   onPlayVoiceNote,
@@ -29,8 +30,8 @@ export default function ApplicationsDashboard({
     setLoading(true);
     try {
       const url = query
-        ? `/api/applications?q=${encodeURIComponent(query)}`
-        : '/api/applications';
+        ? `${API_BASE}/applications?q=${encodeURIComponent(query)}`
+        : `${API_BASE}/applications`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
