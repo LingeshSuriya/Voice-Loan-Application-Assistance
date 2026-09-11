@@ -43,7 +43,11 @@ export default function LandingAuthPage({ onLoginSuccess, onGetStarted }) {
         });
         isOk = res.ok;
         const text = await res.text();
-        data = text ? JSON.parse(text) : {};
+        try {
+          data = (text && text.trim().startsWith('{')) ? JSON.parse(text) : {};
+        } catch (e) {
+          data = {};
+        }
       } catch (networkErr) {
         console.warn('Network auth error, checking demo fallback:', networkErr);
       }
