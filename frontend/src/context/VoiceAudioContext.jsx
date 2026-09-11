@@ -33,7 +33,20 @@ export function VoiceAudioProvider({ children }) {
   const isRecordingRef = useRef(false);   // used inside SpeechRecognition callbacks
 
   useEffect(() => {
+    const unlockAudio = () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.resume();
+      }
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+    };
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
     return () => {
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (audioElementRef.current) audioElementRef.current.pause();
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
